@@ -380,7 +380,7 @@ function package () {
     local install installed
     # for Ubuntu build-essential
     # for centos yum groupinstall "Development Tools"
-    local compile_tools='gcc autoconf pkg-config automake make libtool bzip2 unzip patch wget curl perl'
+    local compile_tools='gcc autoconf automake make libtool bzip2 unzip patch wget curl perl'
     local basic_tools='mlocate git tree'
 
     if grep -qs 'Ubuntu\|Mint|Debian' /etc/issue; then
@@ -417,7 +417,7 @@ function package () {
                     installed="$installed libmbedtls-dev"
                     ;;
                 compile-tools)
-                    installed="$installed $compile_tools libssl-dev g++ xz-utils"
+                    installed="$installed $compile_tools libssl-dev g++ xz-utils pkg-config"
                     ;;
                 *)
                     installed="$installed $i"
@@ -428,7 +428,7 @@ function package () {
         for i in "$@"; do
             case "$i" in
                 compile-tools)
-                    installed="$installed $compile_tools openssl-devel gcc-c++ xz"
+                    installed="$installed $compile_tools openssl-devel gcc-c++ xz pkgconfig"
                     ;;
                 apache2-utils)
                     installed="$installed httpd-tools"
@@ -442,7 +442,7 @@ function package () {
         for i in "$@"; do
             case "$i" in
                 compile-tools)
-                    installed="$installed $compile_tools libopenssl-devel gcc-c++ xz"
+                    installed="$installed $compile_tools libopenssl-devel gcc-c++ xz pkg-config"
                     ;;
                 *)
                     installed="$installed $i"
