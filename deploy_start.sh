@@ -82,7 +82,8 @@ function copy () {
     # --rsync-path 这个命令的本意是, 用来指定远程服务器的 rsync 的路径, 例如: –rsync-path=/usr/local/bin/rsync
     # 因为字符串在 shell 下被运行, 所以它可以是任何合法的命令或脚本.
     # --exclude '.*~'
-    $sudo command rsync -htpPvr -z -L -u --rsync-path="mkdir -p $remote_dir && rsync" "$local_file" $target:"$remote_file"
+
+    $sudo command rsync -htpPvr -z -L --rsync-path="mkdir -p $remote_dir && rsync" "$local_file" $target:"$remote_file" "${@:3}"
 }
 
 function reboot_task () {
