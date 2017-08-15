@@ -37,7 +37,14 @@ set -ue
 
     if [ -z "$SSH_CLIENT$SSH_TTY" ]; then
         set -u
-        ssh $target "$deploy_script"
+        # 检测是否存在 bash.
+        ssh $target bash --version
+        if [ $? == 127 ]; then
+            # 只有路由器这么老土的 linux 系统才没有 bash.
+            echo 'remote host maybe a router? try to install bash...'
+            ssh $target 'opkg install bash'
+        fi
+        ssh $target bash <<< "$deploy_script"
         exit 0
     fi
 }
@@ -55,6 +62,21 @@ function prepend () {
 function copy () {
     detect_target
 
+    if [ "$__use_scp" ]; then
+        __scp "$@"
+        return
+    fi
+
+    __rsync "$@"
+
+    if [ $? == 127 ]; then
+        echo 'rsync is not supported in remote, fallback to use scp.'
+        __use_scp=true
+        __scp "$@"
+    fi
+}
+
+function __rsync () {
     local local_file remote_file remote_dir
     local_file=$1
     remote_file=$2
@@ -85,6 +107,17 @@ function copy () {
 
     $sudo command rsync -htpPvr -z -L --rsync-path="mkdir -p $remote_dir && rsync" "$local_file" $target:"$remote_file" "${@:3}"
 }
+
+function __scp () {
+    local local_file remote_file remote_dir
+    local_file=$1
+    remote_file=$2
+    remote_dir=$(dirname $remote_file)
+
+    ssh $target mkdir -p $remote_dir
+    scp -r "$local_file" $target:"$remote_file" "${@:3}"
+}
+
 
 function reboot_task () {
     local exist_crontab=$(/usr/bin/crontab -l)
@@ -459,6 +492,14 @@ function package () {
         $install $i
     done
 }
+
+# for use with asuswrt merlin only.
+function add_service {
+    [ -e /jffs/scripts/$1 ] || echo '#!/bin/sh' > /jffs/scripts/$1
+    chmod +x /jffs/scripts/$1
+    fgrep -qs -e "$2" /jffs/scripts/$1 || echo "$2" >> /jffs/scripts/$1
+}
+
 
 # only support define a bash variable, bash array variable not supported.
 function __export () {
