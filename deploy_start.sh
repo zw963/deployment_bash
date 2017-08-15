@@ -23,7 +23,8 @@ function deploy_start {
     detect_target
     echo '####################'
     # echo $BASH_SOURCE
-    env |grep '[a-zA-Z_]\+=.*'
+    # env |grep '[a-zA-Z_]\+=.*'
+    echo $0
     echo '###################'
 
     local preinstall="$(cat $BASH_SOURCE |extract_remote_script "export -f $FUNCNAME")
