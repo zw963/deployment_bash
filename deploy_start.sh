@@ -70,7 +70,7 @@ function copy () {
     __rsync "$@"
 
     if [ $? == 127 ]; then
-        echo 'rsync is not supported in remote, fallback to use scp.'
+        echo "[0m[33mrsync is not installed in remote host, fallback to use scp command.[0m"
         __use_scp=true
         __scp "$@"
     fi
