@@ -21,13 +21,8 @@ function extract_remote_script {
 
 function deploy_start {
     detect_target
-    echo '####################'
-    # echo $BASH_SOURCE
-    # env |grep '[a-zA-Z_]\+=.*'
-    echo $0
-    echo '###################'
 
-    local preinstall="$(cat $BASH_SOURCE |extract_remote_script "export -f $FUNCNAME")
+    local preinstall="$(echo "$self" |extract_remote_script "export -f $FUNCNAME")
 $export_hooks
 export target=$target
 export targetip=$(echo $target |cut -d'@' -f2)
