@@ -22,7 +22,7 @@ function extract_remote_script {
 function deploy_start {
     detect_target
 
-    local preinstall="$(cat $FUNCTION_PATH/$FUNCNAME.sh |extract_remote_script "export -f $FUNCNAME")
+    local preinstall="$(cat $BASH_SOURCE |extract_remote_script "export -f $FUNCNAME")
 $export_hooks
 export target=$target
 export targetip=$(echo $target |cut -d'@' -f2)
