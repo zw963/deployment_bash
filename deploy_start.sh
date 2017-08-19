@@ -359,30 +359,34 @@ function wget () {
     local file=$(basename $url)
     command wget --no-check-certificate -c $url -O $file
 }
+
+function curl () {
+    command curl -sS -L "$@"
+}
+
 function download_and_extract () {
     local ext=$( basename "$1" |rev|cut -d'.' -f1|rev)
     local name=$(basename "$1" |rev|cut -d'.' -f2-|rev |sed 's#.tar$##')
-    local wget='command wget --no-check-certificate -c'
     local dest="${2-$name}"
     mkdir -p $dest
     case $ext in
         gz|tgz)
-            $wget -O - "$1" |tar -zxvf - -C "$dest" --strip-components=1
+            curl "$1" |tar -zxvf - -C "$dest" --strip-components=1
             ;;
         bz2)
-            $wget -O - "$1" |tar jxvf - -C "$dest" --strip-components=1
+            curl "$1" |tar -jxvf - -C "$dest" --strip-components=1
             ;;
-        xz)
-            $wget -O - "$1" |tar Jxvf - -C "$dest" --strip-components=1
+        xz|txz)
+            curl "$1" |tar -Jxvf - -C "$dest" --strip-components=1
             ;;
         lzma)
-            $wget -O - "$1" |tar --lzma -xvf - -C "$dest" --strip-components=1
+            curl "$1" |tar --lzma -xvf - -C "$dest" --strip-components=1
             ;;
         zip)
             local fullname=$(basename $1)
 
             temp_dir=$(mktemp -d) &&
-                $wget -P $temp_dir "$1" &&
+                curl -o $temp_dir/$fullname "$1" &&
                 unzip $temp_dir/"$fullname" -d "$temp_dir" &&
                 rm "$temp_dir/$fullname" &&
                 shopt -s dotglob &&
@@ -456,6 +460,30 @@ function package () {
                 zlib-devel)
                     installed="$installed zlib1g-dev"
                     ;;
+                openssl-devel)
+                    installed="$installed libssl-dev"
+                    ;;
+                libffi-devel)
+                    installed="$installed libffi-dev"
+                    ;;
+                readline-devel)
+                    installed="$installed libreadline-dev"
+                    ;;
+                libyaml-devel)
+                    installed="$installed libyaml-dev"
+                    ;;
+                ncurses-devel)
+                    installed="$installed libncurses5-dev"
+                    ;;
+                gdbm-devel)
+                    installed="$installed libgdbm-dev"
+                    ;;
+                sqlite-devel)
+                    installed="$installed libsqlite3-dev"
+                    ;;
+                gmp-devel)
+                    installed="$installed libgmp-dev"
+                    ;;
                 pcre-devel)
                     installed="$installed libpcre3-dev"
                     ;;
@@ -472,7 +500,7 @@ function package () {
                     installed="$installed libmbedtls-dev"
                     ;;
                 compile-tools)
-                    installed="$installed $compile_tools libssl-dev g++ xz-utils pkg-config"
+                    installed="$installed $compile_tools g++ xz-utils pkg-config"
                     ;;
                 *)
                     installed="$installed $i"
@@ -483,7 +511,7 @@ function package () {
         for i in "$@"; do
             case "$i" in
                 compile-tools)
-                    installed="$installed $compile_tools openssl-devel gcc-c++ xz pkgconfig"
+                    installed="$installed $compile_tools gcc-c++ xz pkgconfig"
                     ;;
                 apache2-utils)
                     installed="$installed httpd-tools"
@@ -496,8 +524,17 @@ function package () {
         basic_tools="$basic_tools"
         for i in "$@"; do
             case "$i" in
+                sqlite-devel)
+                    installed="$installed sqlite3-devel"
+                    ;;
+                openssl-devel)
+                    installed="$installed libopenssl-devel"
+                    ;;
                 compile-tools)
-                    installed="$installed $compile_tools libopenssl-devel gcc-c++ xz pkg-config"
+                    installed="$installed $compile_tools gcc-c++ xz pkg-config"
+                    ;;
+                gmp-devel)
+                    installed="$installed libgmp-devel"
                     ;;
                 *)
                     installed="$installed $i"
