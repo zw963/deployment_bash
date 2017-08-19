@@ -127,6 +127,15 @@ function reboot_task () {
     $*
 }
 
+function systemd () {
+    local service=$1
+    cat > /etc/systemd/system/$1.service
+    systemctl daemon-reload
+    systemctl start $service
+    systemctl enable $service
+    systemctl status $service
+}
+
 function daemon () {
     local name=$1
     local command=$2
@@ -351,26 +360,38 @@ function wget () {
     command wget --no-check-certificate -c $url -O $file
 }
 function download_and_extract () {
-    local ext=$( basename "$*" |rev|cut -d'.' -f1|rev)
+    local ext=$( basename "$1" |rev|cut -d'.' -f1|rev)
+    local name=$(basename "$1" |rev|cut -d'.' -f2-|rev |sed 's#.tar$##')
     local wget='command wget --no-check-certificate -c'
+    local dest="${2-$name}"
+    mkdir -p $dest
     case $ext in
-        gz)
-            $wget -O - "$*" |tar zxvf -
+        gz|tgz)
+            $wget -O - "$1" |tar -zxvf - -C "$dest" --strip-components=1
             ;;
         bz2)
-            $wget -O - "$*" |tar jxvf -
+            $wget -O - "$1" |tar jxvf - -C "$dest" --strip-components=1
             ;;
         xz)
-            $wget -O - "$*" |tar Jxvf -
+            $wget -O - "$1" |tar Jxvf - -C "$dest" --strip-components=1
             ;;
         lzma)
-            $wget -O - "$*" |tar --lzma -xvf -
-            ;;
-        rar)
-            $wget "$*" && unrar x "$*"
+            $wget -O - "$1" |tar --lzma -xvf - -C "$dest" --strip-components=1
             ;;
         zip)
-            $wget "$*" && unzip "$*"
+            local fullname=$(basename $1)
+
+            temp_dir=$(mktemp -d) &&
+                $wget -P $temp_dir "$1" &&
+                unzip $temp_dir/"$fullname" -d "$temp_dir" &&
+                rm "$temp_dir/$fullname" &&
+                shopt -s dotglob &&
+                local f=("$temp_dir"/*) &&
+                if (( ${#f[@]} == 1 )) && [[ -d "${f[0]}" ]] ; then
+                    mv "$temp_dir"/*/* "$dest"
+                else
+                    mv "$temp_dir"/* "$dest"
+                fi && rmdir "$temp_dir"/* "$temp_dir"
     esac
 
 }
