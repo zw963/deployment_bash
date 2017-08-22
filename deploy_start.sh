@@ -418,7 +418,7 @@ function sshkeygen () {
 
 function expose_port () {
     for port in "$@"; do
-        if grep -qs 'Ubuntu\|Mint|Debian' /etc/issue; then
+        if grep -qs 'Ubuntu\|Mint\|Debian' /etc/issue; then
             # systemctl status ufw
             # ufw 中, 允许端口 1098, ufw allow 1098
             # rc.local "iptables -I INPUT -p tcp --dport $port -j ACCEPT"
@@ -442,18 +442,18 @@ function package () {
     local compile_tools='gcc autoconf automake make libtool bzip2 unzip patch wget curl perl'
     local basic_tools='mlocate git tree'
 
-    if grep -qs 'Ubuntu\|Mint|Debian' /etc/issue; then
+    if grep -qs 'Ubuntu\|Mint\|Debian' /etc/issue; then
         $sudo apt-get update
         install="$sudo apt-get install -y --no-install-recommends"
     elif grep -qs CentOS /etc/redhat-release; then
-        # if Want get centos version, use `rpm -q centos-release'.
+        # if Want get centos version, use 'rpm -q centos-release'.
         install="$sudo yum install -y"
     elif grep -qs openSUSE /etc/issue; then
         install="$sudo zypper -n in --no-recommends"
     fi
 
     installed=
-    if grep -qs 'Ubuntu\|Mint|Debian' /etc/issue; then
+    if grep -qs 'Ubuntu\|Mint\|Debian' /etc/issue; then
         basic_tools="$basic_tools"
         for i in "$@"; do
             case "$i" in
@@ -563,7 +563,7 @@ function add_service {
 function __export () {
     local name=$(echo "$*" |cut -d'=' -f1)
     local value=$(echo "$*" |cut -d'=' -f2-)
-    local escaped_value=$(echo "$value" |sed 's#\([\$"`]\)#\\\1#g')
+    local escaped_value=$(echo "$value" |sed 's#\([\$\"\`]\)#\\\1#g')
 
     eval 'builtin export $name="$value"'
     export_hooks="$export_hooks builtin export $name=\"$escaped_value\""
