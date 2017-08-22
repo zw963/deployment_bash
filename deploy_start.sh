@@ -289,17 +289,6 @@ function replace_string () {
     local config_file=$3
 
     replace "$regexp" "$replace" "$config_file"
-
-    # only matched string exist, replace with new string.
-    # if matched_line=$(grep -s "$regexp" $config_file|tail -n1) && test -n "$matched_line"; then
-    #     local matched_line_regexp=$(echo "$matched_line" |regexp_escape)
-    #     local replaced_line=$(echo "$matched_line"|sed "s/$regexp/$replace_string/")
-
-    #     # sed -i -e "s/^${matched_line_regexp}$/\n#= &\n#= Above config-default value is replaced by following config value. $(date '+%Y-%m-%d %H:%M:%S') by ${_modifier-$USER}\n$replaced_line/" $config_file
-    #     sed -i -e "s/^${matched_line_regexp}$/$replaced_line/" $config_file
-
-    #     echo "\`$old_string' is replaced in $config_file."
-    # fi
 }
 
 function update_config () {
@@ -563,7 +552,7 @@ function add_service {
 function __export () {
     local name=$(echo "$*" |cut -d'=' -f1)
     local value=$(echo "$*" |cut -d'=' -f2-)
-    local escaped_value=$(echo "$value" |sed 's#\([\$\"\`]\)#\\\1#g')
+    local escaped_value=$(echo "$value" |sed 's#\([\$"\`]\)#\\\1#g')
 
     eval 'builtin export $name="$value"'
     export_hooks="$export_hooks builtin export $name=\"$escaped_value\""
