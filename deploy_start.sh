@@ -41,7 +41,7 @@ set -ue
         ssh $target bash --version
         if [ $? == 127 ]; then
             # 只有路由器这么老土的 linux 系统才没有 bash.
-            echo 'remote host maybe a router? try to install bash...'
+            echo 'remote host missing bash, try to install it...'
             ssh $target 'opkg install bash'
         fi
         ssh $target bash <<< "$deploy_script"
@@ -561,8 +561,8 @@ function add_service {
 
 # only support define a bash variable, bash array variable not supported.
 function __export () {
-    local name=$(echo "$*" |cut -z -d'=' -f1)
-    local value=$(echo "$*" |cut -z -d'=' -f2-)
+    local name=$(echo "$*" |cut -d'=' -f1)
+    local value=$(echo "$*" |cut -d'=' -f2-)
     local escaped_value=$(echo "$value" |sed 's#\([\$"`]\)#\\\1#g')
 
     eval 'builtin export $name="$value"'
