@@ -197,7 +197,7 @@ function append_file () {
     if [ "$line_number" == "1" ]; then
         regexp=$(echo "$content" |regexp_escape)
         set +e
-        grep "^\\s*${regexp}\\s*" "$file"
+        grep -s -e "^\\s*${regexp}\\s*" "$file"
     else
         set +e
         match_multiline "$content" "$(cat $file)"
@@ -249,6 +249,13 @@ function replace_escape() {
     printf %s "${REPLY%$'\n'}"
 }
 
+# 这个是保留 & 作为之前的匹配内容的版本.
+function replace_escape1() {
+    IFS= read -d '' -r <<< "$(sed -e ':a' -e '$!{N;ba' -e '}' -e 's/[/\]/\\&/g; s/\n/\\&/g')"
+    printf %s "${REPLY%$'\n'}"
+}
+
+
 function match_multiline() {
     local regex content
     # 将 regexp 的换行符 换为一个不可见字符.
@@ -265,27 +272,26 @@ function match_multiline() {
 function replace () {
     local regexp replace file content
     regexp=$1
-    replace="$(echo "$2" |replace_escape)"
+    replace=$2
     file=$3
 
-    if content=$(grep -o -e "$regexp" "$file"); then
+    if matched_content=$(grep -o -e "$regexp" "$file"); then
         $sudo sed -i -e "s/$regexp/$replace/" "$file"
-        echo "\`[0m[33m$content[0m' is replaced with \`[0m[33m$replace[0m' for $file"
+        echo "\`[0m[33m${matched_content}[0m' is replaced with \`[0m[33m$replace[0m' for $file"
     fi
 }
 
 function replace_regex () {
     local regexp=$1
-    local replace=$2
+    local replace="$(echo "$2" |replace_escape1)"
     local config_file=$3
 
     replace "$regexp" "$replace" "$config_file"
 }
 
 function replace_string () {
-    local string=$1
-    local regexp="$(echo "$string" |regexp_escape)"
-    local replace=$2
+    local regexp="$(echo "$1" |regexp_escape)"
+    local replace="$(echo "$2" |replace_escape)"
     local config_file=$3
 
     replace "$regexp" "$replace" "$config_file"
