@@ -38,10 +38,10 @@ set -ue
     if [ -z "$SSH_CLIENT$SSH_TTY" ]; then
         set -u
         # 检测是否存在 bash.
-        ssh $target bash --version
+        ssh $target bash --version &>/dev/null
+
         if [ $? == 127 ]; then
-            # 只有路由器这么老土的 linux 系统才没有 bash.
-            echo 'remote host missing bash, try to install it...'
+            echo "[0m[33mremote host missing bash, try to install it...[0m"
             ssh $target 'opkg install bash'
         fi
         ssh $target bash <<< "$deploy_script"
@@ -67,7 +67,7 @@ function copy () {
         return
     fi
 
-    __rsync "$@"
+    __rsync "$@" &>/dev/null
 
     if [ $? == 127 ]; then
         echo "[0m[33mrsync is not installed in remote host, fallback to use scp command.[0m"
