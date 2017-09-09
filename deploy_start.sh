@@ -67,7 +67,8 @@ function copy () {
         return
     fi
 
-    __rsync "$@" &>/dev/null
+
+    __rsync "$@" 2>/dev/null
 
     if [ $? == 127 ]; then
         echo "[0m[33mrsync is not installed in remote host, fallback to use scp command.[0m"
@@ -81,6 +82,11 @@ function __rsync () {
     local_file=$1
     remote_file=$2
     remote_dir=$(dirname $remote_file)
+
+    if [ ! -e "$local_file" ]; then
+        echo "local file $local_file is missing ..."
+        exit
+    fi
 
     # -a 等价于: -rlptgoD, archive 模式:
     # -r --recursive,
@@ -113,6 +119,11 @@ function __scp () {
     local_file=$1
     remote_file=$2
     remote_dir=$(dirname $remote_file)
+
+    if [ ! -e "$local_file" ]; then
+        echo "local file $local_file is missing ..."
+        exit
+    fi
 
     ssh $target mkdir -p $remote_dir
     scp -r "$local_file" $target:"$remote_file" "${@:3}"
