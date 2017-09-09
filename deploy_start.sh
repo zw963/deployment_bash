@@ -491,6 +491,9 @@ function package () {
                 libev-devel)
                     installed="$installed libev-dev"
                     ;;
+                libevent-devel)
+                    installed="$installed libevent-dev"
+                    ;;
                 mbedtls-devel)
                     installed="$installed libmbedtls-dev"
                     ;;
