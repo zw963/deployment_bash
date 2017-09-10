@@ -181,6 +181,42 @@ HEREDOC
     # systemctl disable shadowsocks
 }
 
+function daemon1 () {
+    local package_name=$1
+    local command_name=$2
+    local command_arg=$3
+
+    if grep -qs CentOS /etc/redhat-release; then
+        # Centos 需要 psmisc 来安装 killall
+        yum install -y psmisc
+    fi
+
+    [ -e /etc/rc.func ] && mv /etc/rc.func /etc/rc.func.bak
+    curl https://raw.githubusercontent.com/zw963/deployment_bash/master/rc.func > /etc/rc.func
+
+    cat <<HEREDOC > /etc/init.d/$package_name
+#!/bin/sh
+
+ENABLED=yes
+PROCS=${command_name}
+ARGS="${command_arg}"
+PREARGS=""
+DESC=\$PROCS
+PATH=/opt/sbin:/opt/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+. /etc/rc.func
+HEREDOC
+
+    chmod +x /etc/init.d/$package_name
+}
+
+function rc_local () {
+    local conf=/etc/rc.local
+
+    fgrep -qs "$*" $conf || echo "$*" >> $conf
+    chmod +x $conf && $*
+}
+
 function clone () {
     git clone --depth=5 "$@"
 }
@@ -413,14 +449,6 @@ function diff () {
 function sshkeygen () {
     ssh-keygen -t rsa -f ~/.ssh/id_rsa -N ''
 }
-
-# function rc.local () {
-#     local conf=/etc/rc.local
-
-#     fgrep -qs "$*" $conf || echo "$*" >> $conf
-#     chmod +x $conf
-#     # $*
-# }
 
 function expose_port () {
     for port in "$@"; do
