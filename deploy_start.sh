@@ -487,61 +487,47 @@ function package () {
     fi
 
     installed=
+
+    centos_debian_map_list="
+zlib-devel zlib1-dev
+openssl-devel libssl-dev
+libffi-devel libffi-dev
+readline-devel libreadline-dev
+libyaml-devel libyaml-dev
+ncurses-devel libncurses5-dev
+gdbm-devel libgdbm-dev
+sqlite-devel libsqlite3-dev
+gmp-devel libgmp-dev
+pcre-devel libpcre3-dev
+libsodium-devel libsodium-dev
+udns-devel libudns-dev
+libev-devel libev-dev
+libevent-devel libevent-dev
+mbedtls-devel libmbedtls-dev
+"
+    case_statement=""
+
+
+    OLDIFS="$IFS" && IFS=$'\n'
+    for map in $centos_debian_map_list; do
+        case_statement="${case_statement}
+${map% *})
+  install=\"$installed ${map#* }\"
+  ;;
+"
+    done
+    IFS="$OLDIFS"
+
     if grep -qs 'Ubuntu\|Mint\|Debian' /etc/issue; then
         basic_tools="$basic_tools"
         for i in "$@"; do
-            case "$i" in
-                zlib-devel)
-                    installed="$installed zlib1g-dev"
-                    ;;
-                openssl-devel)
-                    installed="$installed libssl-dev"
-                    ;;
-                libffi-devel)
-                    installed="$installed libffi-dev"
-                    ;;
-                readline-devel)
-                    installed="$installed libreadline-dev"
-                    ;;
-                libyaml-devel)
-                    installed="$installed libyaml-dev"
-                    ;;
-                ncurses-devel)
-                    installed="$installed libncurses5-dev"
-                    ;;
-                gdbm-devel)
-                    installed="$installed libgdbm-dev"
-                    ;;
-                sqlite-devel)
-                    installed="$installed libsqlite3-dev"
-                    ;;
-                gmp-devel)
-                    installed="$installed libgmp-dev"
-                    ;;
-                pcre-devel)
-                    installed="$installed libpcre3-dev"
-                    ;;
-                libsodium-devel)
-                    installed="$installed libsodium-dev"
-                    ;;
-                udns-devel)
-                    installed="$installed libudns-dev"
-                    ;;
-                libev-devel)
-                    installed="$installed libev-dev"
-                    ;;
-                libevent-devel)
-                    installed="$installed libevent-dev"
-                    ;;
-                mbedtls-devel)
-                    installed="$installed libmbedtls-dev"
-                    ;;
-                compile-tools)
-                    installed="$installed $compile_tools g++ xz-utils pkg-config"
-                    ;;
-                *)
-                    installed="$installed $i"
-            esac
+            eval "
+case \"$i\" in
+  ${case_statement}
+  *)
+    installed=\"$installed $i\"
+esac
+"
         done
     elif grep -qs CentOS /etc/redhat-release; then
         basic_tools="$basic_tools yum-cron yum-utils epel-release"
