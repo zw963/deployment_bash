@@ -489,7 +489,7 @@ function package () {
     installed=
 
     centos_debian_map_list="
-zlib-devel zlib1-dev
+zlib-devel zlib1g-dev
 openssl-devel libssl-dev
 libffi-devel libffi-dev
 readline-devel libreadline-dev
@@ -512,9 +512,8 @@ mbedtls-devel libmbedtls-dev
     for map in $centos_debian_map_list; do
         case_statement="${case_statement}
 ${map% *})
-  install=\"$installed ${map#* }\"
-  ;;
-"
+  installed=\"\$installed ${map#* }\"
+  ;;"
     done
     IFS="$OLDIFS"
 
@@ -524,8 +523,11 @@ ${map% *})
             eval "
 case \"$i\" in
   ${case_statement}
-  *)
-    installed=\"$installed $i\"
+compile-tools)
+    installed=\"\$installed $compile_tools g++ xz-utils pkg-config\"
+    ;;
+ *)
+    installed=\"\$installed $i\"
 esac
 "
         done
