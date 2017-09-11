@@ -183,8 +183,7 @@ HEREDOC
 
 function daemon1 () {
     local package_name=$1
-    local command_name=$2
-    local command_arg=$3
+    local command=$2
 
     if grep -qs CentOS /etc/redhat-release; then
         # Centos 需要 psmisc 来安装 killall
@@ -198,8 +197,8 @@ function daemon1 () {
 #!/bin/sh
 
 ENABLED=yes
-PROCS=${command_name}
-ARGS="${command_arg}"
+PROCS=${command%% *}
+ARGS="${command#* }"
 PREARGS=""
 DESC=\$PROCS
 PATH=/opt/sbin:/opt/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
@@ -208,6 +207,7 @@ PATH=/opt/sbin:/opt/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:
 HEREDOC
 
     chmod +x /etc/init.d/$package_name
+    /etc/init.d/$package_name start
 }
 
 function rc_local () {
