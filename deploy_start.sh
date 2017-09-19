@@ -42,14 +42,23 @@ set -ue
 
         if [ $? == 127 ]; then
             echo "[0m[33mremote host missing bash, try to install it...[0m"
-            ssh $target 'opkg install bash'
+            ssh $target 'opkg install bash perl'
         fi
+
         ssh $target bash <<< "$deploy_script"
         exit 0
     fi
 }
 
 export -f deploy_start
+
+if ! which perl &>/dev/null; then
+    if grep -qs 'Ubuntu\|Mint\|Debian' /etc/issue; then
+        apt-get install -y --no-install-recommends perl
+    elif grep -qs CentOS /etc/redhat-release; then
+        yum install -y perl
+    fi
+fi
 
 function append () {
     sed '$a'"$*"
@@ -316,32 +325,51 @@ function match_multiline() {
     echo "$content" |fgrep "$regex"
 }
 
+function perl_replace() {
+    local regexp replace file content
+    regexp=$1
+    # 注意 replace 当中的特殊变量, 例如, $& $1 $2 的手动转义.
+    # 写完一定测试一下，perl 变量引用: http://www.perlmonks.org/?node_id=353259
+    replace=$2
+    escaped_replace=$(echo "$replace" |sed 's#"#\\"#g')
+
+    perl -i -ne "s$regexp$replaceg; print \$_; unless ($& eq \"\") {print STDERR \"\`\033[0;33m$&\033[0m' is replace with \`\033[0;33m${escaped_replace}\033[0m'\n\"};" "${@:3}"
+}
+
+# 为了支持多行匹配，使用 perl 正则, 比 sed 好用一百倍！
+function replace_multiline () {
+    local regexp replace file content
+    regexp=$1
+    replace=$2
+    file=$3
+
+    perl_replace "$regexp" "$replace" -0 "$file"
+}
+
 function replace () {
     local regexp replace file content
     regexp=$1
     replace=$2
     file=$3
 
-    if matched_content=$(grep -o -e "$regexp" "$file"); then
-        $sudo sed -i -e "s/$regexp/$replace/" "$file"
-        echo "\`[0m[33m${matched_content}[0m' is replaced with \`[0m[33m$replace[0m' for $file"
-    fi
+    perl_replace "$regexp" "$replace" "$file"
 }
 
 function replace_regex () {
-    local regexp=$1
-    local replace="$(echo "$2" |replace_escape1)"
-    local config_file=$3
+    local regexp="$1"
+    local replace="$2"
+    local file=$3
 
-    replace "$regexp" "$replace" "$config_file"
+    replace_multiline "$regexp" "$replace" "$file"
 }
 
 function replace_string () {
-    local regexp="$(echo "$1" |regexp_escape)"
-    local replace="$(echo "$2" |replace_escape)"
-    local config_file=$3
+    # 转化输入的字符串为 literal 形式
+    local regexp="\\Q$1\\E"
+    local replace="$2"
+    local file=$3
 
-    replace "$regexp" "$replace" "$config_file"
+    replace_multiline "$regexp" "$replace" "$file"
 }
 
 function update_config () {
