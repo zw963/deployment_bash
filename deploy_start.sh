@@ -37,11 +37,11 @@ set -ue
 
     if [ -z "$SSH_CLIENT$SSH_TTY" ]; then
         set -u
-        # 检测是否存在 bash.
-        ssh $target bash --version &>/dev/null
+        # 检测是否存在 bash perl
+        ssh $target bash -c 'perl --version' &>/dev/null
 
         if [ $? == 127 ]; then
-            echo "[0m[33mremote host missing bash, try to install it...[0m"
+            echo "[0m[33mremote host missing bash/perl, try to install it...[0m"
             ssh $target 'opkg install bash perl'
         fi
 
