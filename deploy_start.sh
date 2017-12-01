@@ -1,16 +1,17 @@
 #!/bin/bash
 
 function detect_target () {
-    if [[ "$target" =~ [-_.[:alnum:]]+@.+ ]]; then
+    if [[ "$target" == localhost ]]; then
+        target=$target
+    elif [[ "$target" =~ [-_.[:alnum:]]+@.+ ]]; then
         target=${BASH_REMATCH[0]}
     elif [[ "$target" =~ [a-zA-Z0-9_.]+ ]]; then
         # 域名
         target=${BASH_REMATCH[0]}
-    elif [[ "$target" == localhost ]]; then
-        target=$target
     else
-        echo "\`\$target' variable must be provided in your's scripts before $FUNCNAME."
+        echo "\`\$target' variable must be provided in your's scripts before run scripts."
         echo 'e.g. target=localhost or target=root@123.123.123.123'
+        echo 'or provide with arg, e.g. deploy_start root@123.123.123.123'
         exit
     fi
 }
@@ -51,6 +52,10 @@ set -ue
 }
 
 export -f deploy_start
+
+if [ -z "$SSH_CLIENT$SSH_TTY" ]; then
+    sudo=sudo
+fi
 
 if ! which perl &>/dev/null; then
     if grep -qs 'Ubuntu\|Mint\|Debian' /etc/issue; then
@@ -193,16 +198,21 @@ HEREDOC
 function daemon1 () {
     local package_name=$1
     local command=$2
+    set +u
+    local path=$3
+    set -u
 
-    if grep -qs CentOS /etc/redhat-release; then
-        # Centos 需要 psmisc 来安装 killall
-        yum install -y psmisc
+    if ! which killall &>/dev/null; then
+        if grep -qs CentOS /etc/redhat-release; then
+            # Centos 需要 psmisc 来安装 killall
+            yum install -y psmisc
+        fi
     fi
 
     [ -e /etc/rc.func ] && mv /etc/rc.func /etc/rc.func.bak
-    curl https://raw.githubusercontent.com/zw963/deployment_bash/master/rc.func > /etc/rc.func
+    curl https://raw.githubusercontent.com/zw963/deployment_bash/master/rc.func -o /etc/rc.func
 
-    cat <<HEREDOC > /etc/init.d/$package_name
+    cat <<HEREDOC |tee /etc/init.d/$package_name
 #!/bin/sh
 
 ENABLED=yes
@@ -210,12 +220,12 @@ PROCS=${command%% *}
 ARGS="${command#* }"
 PREARGS=""
 DESC=\$PROCS
-PATH=/opt/sbin:/opt/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+PATH=/opt/sbin:/opt/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin${path+:}${path}
 
 . /etc/rc.func
 HEREDOC
 
-    chmod +x /etc/init.d/$package_name
+    $sudo chmod +x /etc/init.d/$package_name
     /etc/init.d/$package_name start
 }
 
