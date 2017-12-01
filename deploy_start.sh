@@ -161,6 +161,10 @@ function systemd () {
     systemctl status $service
 }
 
+function backup () {
+    mv $* $*_bak-$(date '+%Y-%m-%d_%H:%M')
+}
+
 function daemon () {
     local name=$1
     local command=$2
@@ -209,7 +213,7 @@ function daemon1 () {
         fi
     fi
 
-    [ -e /etc/rc.func ] && mv /etc/rc.func /etc/rc.func.bak
+    [ -e /etc/rc.func ] && backup /etc/rc.func
     curl https://raw.githubusercontent.com/zw963/deployment_bash/master/rc.func -o /etc/rc.func
 
     cat <<HEREDOC |tee /etc/init.d/$package_name
