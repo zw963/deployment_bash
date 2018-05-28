@@ -78,14 +78,14 @@ function copy () {
 
     if [ "$__use_scp" ]; then
         __scp "$@"
-        return
+        return $?
     fi
 
-
+    # rsync only update older file.
     __rsync "$@" 2>/dev/null
 
     if [ $? == 127 ]; then
-        echo "[0m[33mrsync is not installed in remote host, fallback to use scp command.[0m"
+        # if rsync not exist, use scp
         __use_scp=true
         __scp "$@"
     fi
@@ -125,7 +125,7 @@ function __rsync () {
     # 因为字符串在 shell 下被运行, 所以它可以是任何合法的命令或脚本.
     # --exclude '.*~'
 
-    $sudo command rsync -htpPvr -z -L --rsync-path="mkdir -p $remote_dir && rsync" "$local_file" $target:"$remote_file" "${@:3}"
+    $sudo command rsync -htpPvr -z -L -u --rsync-path="mkdir -p $remote_dir && rsync" "$local_file" $target:"$remote_file" "${@:3}"
 }
 
 function __scp () {
@@ -306,7 +306,7 @@ function prepend_file () {
 
     if ! [ $? == 0 ]; then
         content_escaped=$(echo "$content" |replace_escape)
-        $sudo sed -i 1i"$content_escaped" "$file"
+        sed -i 1i"$content_escaped" "$file"
         echo "[0m[33mPrepend \`$content' into $file[0m"
     fi
 }
