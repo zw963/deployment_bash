@@ -53,9 +53,9 @@ set -ue
 
 export -f deploy_start
 
-if [ -z "$SSH_CLIENT$SSH_TTY" ]; then
-    sudo=sudo
-fi
+# if [ -z "$SSH_CLIENT$SSH_TTY" ]; then
+#     sudo=sudo
+# fi
 
 if ! which perl &>/dev/null; then
     if grep -qs 'Ubuntu\|Mint\|Debian' /etc/issue; then
@@ -125,7 +125,7 @@ function __rsync () {
     # 因为字符串在 shell 下被运行, 所以它可以是任何合法的命令或脚本.
     # --exclude '.*~'
 
-    $sudo command rsync -htpPvr -z -L -u --rsync-path="mkdir -p $remote_dir && rsync" "$local_file" $target:"$remote_file" "${@:3}"
+    rsync -htpPvr -z -L -u --rsync-path="mkdir -p $remote_dir && rsync" "$local_file" $target:"$remote_file" "${@:3}"
 }
 
 function __scp () {
