@@ -550,6 +550,7 @@ udns-devel libudns-dev
 libev-devel libev-dev
 libevent-devel libevent-dev
 mbedtls-devel libmbedtls-dev
+c-ares-devel libc-ares-dev
 "
     case_statement=""
 
