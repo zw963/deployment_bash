@@ -185,6 +185,7 @@ function daemon () {
      LimitNOFILE=51200
      LimitCORE=infinity
      LimitNPROC=51200
+     Environment=LD_LIBRARY_PATH=/usr/lib64
 
      [Install]
      WantedBy=multi-user.target
