@@ -530,7 +530,7 @@ function package () {
         # if Want get centos version, use 'rpm -q centos-release'.
         install="$sudo yum install -y"
     elif grep -qs openSUSE /etc/issue; then
-        install="$sudo zypper -n in --no-recommends"
+        install="$sudo zypper -n --gpg-auto-import-keys in --no-recommends"
     fi
 
     installed=
