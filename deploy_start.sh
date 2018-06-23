@@ -341,7 +341,7 @@ function match_multiline() {
     content=$(echo "$2"|tr '\n' '\a')
 
     # 多行匹配, 选择文本匹配, 而不是正则.
-    echo "$content" |fgrep "$regex"
+    echo "$content" |fgrep -qs -e "$regex"
 }
 
 function perl_replace() {
@@ -506,10 +506,12 @@ function expose_port () {
             # rc.local "iptables -I INPUT -p udp --dport $port -j ACCEPT"
             echo 'no need install iptables'
         elif grep -qs CentOS /etc/redhat-release; then
-            firewall-cmd --zone=public --add-port=$port/tcp --permanent
-            firewall-cmd --zone=public --add-port=$port/udp --permanent
-            firewall-cmd --reload   # 这个只在 --permanent 参数存在时, 才需要
-            # firewall-cmd --zone=public --list-ports
+            if which firewall-cmd &>/dev/null; then
+                firewall-cmd --zone=public --add-port=$port/tcp --permanent
+                firewall-cmd --zone=public --add-port=$port/udp --permanent
+                firewall-cmd --reload   # 这个只在 --permanent 参数存在时, 才需要
+                # firewall-cmd --zone=public --list-ports
+            fi
         elif grep -qs openSUSE /etc/issue; then
             yast firewall services add tcpport=$port zone=EXT
         fi
