@@ -84,7 +84,7 @@ function copy () {
     # rsync only update older file.
     __rsync "$@" 2>/dev/null
 
-    if [ $? == 127 ]; then
+    if [ $? != 0 ]; then
         # if rsync not exist, use scp
         __use_scp=true
         __scp "$@"
