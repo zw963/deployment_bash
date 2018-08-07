@@ -276,7 +276,7 @@ function append_file () {
 
     if ! [ $? == 0 ]; then
         # echo -e "\n#= Add by ${_modifier-$USER} =#" >> "$file"
-        if [ "$(tail -c 1 $file)" == "" ]; then
+        if [ -e "$file" ] && [ "$(tail -c 1 $file)" == "" ]; then
             echo -e "$content" >> "$file"
         else
             echo -e "\n$content" >> "$file"
