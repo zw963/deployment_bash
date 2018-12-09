@@ -41,7 +41,7 @@ set -ue
         # 检测是否存在 bash perl
         ssh $target 'bash --version' &>/dev/null
 
-        if [ $? == 127 ]; then
+        if [ $? != 0 ]; then
             # echo "[0m[33mremote host missing bash & perl, try to install it...[0m"
             ssh $target 'opkg install bash perl'
         fi
