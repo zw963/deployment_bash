@@ -645,3 +645,17 @@ function __export () {
 }
 
 alias export=__export
+
+function export_variable () {
+    eval 'builtin export $*'
+    export_hooks="$export_hooks
+ builtin export $*"
+}
+
+function export_function () {
+    eval 'builtin export -f $*'
+    new_function=$(type dockerinit |tail -n +2)
+    export_hooks="$export_hooks
+$new_function
+builtin export -f $*"
+}
