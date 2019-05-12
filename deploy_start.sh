@@ -17,7 +17,12 @@ function detect_target () {
 }
 
 function extract_remote_script {
-    awk "/^[[:space:]]*$*/,EOF" |tail -n +2
+    # awk "/^[[:space:]]*$*/,EOF" |tail -n +2
+    # 上面的 awk 版本在 Ubuntu 的非 GNU 版本的 awk 上不工作.
+    # 下面的 sed 是不是会带来新的兼容问题？
+    # 考虑使用 grep -A 来实现，兼容性应该最好，
+    #但是 -A 后面只能指定一个很大的数值, 来确保显示文件后面所有的行.
+    sed -n "/^[[:space:]]*$*/,\$p" |tail -n +2
 }
 
 function deploy_start {
