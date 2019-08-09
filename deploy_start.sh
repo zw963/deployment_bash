@@ -28,11 +28,12 @@ function extract_remote_script {
 function deploy_start {
     detect_target
 
+    targetip=$(echo $target |cut -d'@' -f2)
     local preinstall="$(echo "$self" |extract_remote_script "export -f $FUNCNAME")
 set +ue
 $export_hooks
 export target=$target
-export targetip=$(echo $target |cut -d'@' -f2)
+export targetip=$targetip
 _modifier=$USER
 echo '***********************************************************'
 echo Remote deploy scripts is started !!
@@ -49,6 +50,11 @@ set -ue
     fi
     set -u
 
+    if ! type postinstall &>/dev/null; then
+        function postinstall () { true; };
+    fi
+    export -f postinstall
+
     if ! $is_ssh_login; then
         set -u
         # 检测是否存在 bash perl
@@ -60,6 +66,12 @@ set -ue
         fi
 
         ssh $target bash <<< "$deploy_script"
+
+        if [ $? == 0 ]; then
+            set +u
+            postinstall
+        fi
+        
         exit 0
     fi
 }
