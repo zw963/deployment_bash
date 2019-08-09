@@ -29,10 +29,10 @@ function deploy_start {
     detect_target
 
     local preinstall="$(echo "$self" |extract_remote_script "export -f $FUNCNAME")
+set +ue
 $export_hooks
 export target=$target
 export targetip=$(echo $target |cut -d'@' -f2)
-sudo=$sudo
 _modifier=$USER
 echo '***********************************************************'
 echo Remote deploy scripts is started !!
@@ -41,7 +41,15 @@ set -ue
 "
     local deploy_script="$preinstall$(cat $0 |extract_remote_script $FUNCNAME)"
 
-    if [ -z "$SSH_CLIENT$SSH_TTY" ]; then
+    set +u
+    if [ "$SSH_CLIENT$SSH_TTY" ]; then
+        is_ssh_login=true
+    else
+        is_ssh_login=false
+    fi
+    set -u
+
+    if ! $is_ssh_login; then
         set -u
         # 检测是否存在 bash perl
         ssh $target 'bash --version' &>/dev/null
@@ -57,10 +65,6 @@ set -ue
 }
 
 export -f deploy_start
-
-# if [ -z "$SSH_CLIENT$SSH_TTY" ]; then
-#     sudo=sudo
-# fi
 
 if ! which perl &>/dev/null; then
     if grep -qs 'Ubuntu\|Mint\|Debian' /etc/issue; then
@@ -207,7 +211,7 @@ HEREDOC
 
 function daemon1 () {
     local package_name=$1
-    local command=$2
+    local command="$2 "
     set +u
     local path=$3
     set -u
@@ -235,7 +239,7 @@ PATH=/opt/sbin:/opt/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:
 . /etc/rc.func
 HEREDOC
 
-    $sudo chmod +x /etc/init.d/$package_name
+    chmod +x /etc/init.d/$package_name
     /etc/init.d/$package_name start
 }
 
@@ -506,6 +510,8 @@ function expose_port () {
     for port in "$@"; do
         if grep -qs 'Ubuntu\|Mint\|Debian' /etc/issue; then
             # systemctl status ufw
+            # sudo ufw allow 22336/udp
+            # sudo ufw allow 22336/tcp
             # ufw 中, 允许端口 1098, ufw allow 1098
             # rc.local "iptables -I INPUT -p tcp --dport $port -j ACCEPT"
             # rc.local "iptables -I INPUT -p udp --dport $port -j ACCEPT"
@@ -531,13 +537,13 @@ function package () {
     local basic_tools='mlocate git tree'
 
     if grep -qs 'Ubuntu\|Mint\|Debian' /etc/issue; then
-        $sudo apt-get update
-        install="$sudo apt-get install -y --no-install-recommends"
+        apt-get update
+        install="apt-get install -y --no-install-recommends"
     elif grep -qs CentOS /etc/redhat-release; then
         # if Want get centos version, use 'rpm -q centos-release'.
-        install="$sudo yum install -y"
+        install="yum install -y"
     elif grep -qs openSUSE /etc/issue; then
-        install="$sudo zypper -n --gpg-auto-import-keys in --no-recommends"
+        install="zypper -n --gpg-auto-import-keys in --no-recommends"
     fi
 
     installed=
