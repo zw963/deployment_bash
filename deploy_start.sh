@@ -71,7 +71,7 @@ set -ue
             set +u
             postinstall
         fi
-        
+
         exit 0
     fi
 }
@@ -190,27 +190,32 @@ function daemon () {
     local name=$1
     local command=$2
 
-    getent passwd $name || useradd $name -s /sbin/nologin
+    # getent passwd $name || useradd $name -s /sbin/nologin
+
+    # systemd document chinese version.
+    # http://www.jinbuguo.com/systemd/systemd.service.html
 
     cat <<HEREDOC > /etc/systemd/system/$name.service
      [Unit]
      Description=$name Service
-     After=network.target
+     After=syslog.target network.target
 
      [Service]
-     Type=simple
-     User=$name
-     ExecStart=$command
-     ExecReload=/bin/kill -USR1 \$MAINPID
-     Restart=on-abort
      LimitNOFILE=51200
-     LimitCORE=infinity
      LimitNPROC=51200
+     LimitCORE=infinity
      Environment=LD_LIBRARY_PATH=/usr/lib64
+     Type=forking
+     ExecStart=$command
+     ExecStop=/bin/kill -TERM \$MAINPID
+     ExecReload=/bin/kill -HUP \$MAINPID
+     PIDFile=/var/run/${name}.pid
+     Restart=always
 
      [Install]
      WantedBy=multi-user.target
 HEREDOC
+
     systemctl daemon-reload
     systemctl start $name
     systemctl enable $name
