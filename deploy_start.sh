@@ -546,6 +546,31 @@ function expose_port () {
     done
 }
 
+function dockerinit () {
+    set -x
+    getent group docker || groupadd -r -g 281 docker
+    dest=$1
+
+    if ! test -f $dest/bin/docker; then
+        mkdir -p $dest/bin
+        mkdir -p $dest/containers
+        append_file $HOME/.bashrc "PATH=$dest/bin"':$PATH'
+
+        # 最新版 url: https://download.docker.com/linux/static/stable/x86_64/
+        download_and_extract https://download.docker.com/linux/static/stable/x86_64/docker-18.09.5.tgz $dest/bin
+    fi
+
+    if ! test -f /etc/init.d/$dest; then
+        daemon1 docker-daemon "$dest/bin/dockerd --data-root $dest/containers --userland-proxy=false" $dest/bin
+    fi
+    PATH=$dest/bin/:$PATH
+
+    while ! docker ps &>/dev/null; do
+        echo -n '.'
+        sleep 1
+    done
+}
+
 function package () {
     local install installed
     # for Ubuntu build-essential
