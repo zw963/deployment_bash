@@ -534,7 +534,7 @@ function expose_port () {
             # rc.local "iptables -I INPUT -p udp --dport $port -j ACCEPT"
             echo 'no need install iptables'
         elif grep -qs CentOS /etc/redhat-release; then
-            if which firewall-cmd &>/dev/null; then
+            if firewall-cmd --state &>/dev/null; then
                 firewall-cmd --zone=public --add-port=$port/tcp --permanent
                 firewall-cmd --zone=public --add-port=$port/udp --permanent
                 firewall-cmd --reload   # 这个只在 --permanent 参数存在时, 才需要
@@ -547,7 +547,6 @@ function expose_port () {
 }
 
 function dockerinit () {
-    set -x
     getent group docker || groupadd -r -g 281 docker
     dest=$1
 
@@ -607,6 +606,8 @@ libev-devel libev-dev
 libevent-devel libevent-dev
 mbedtls-devel libmbedtls-dev
 c-ares-devel libc-ares-dev
+postgresql-devel libpq-dev
+postgresql postgresql-client-common
 "
     case_statement=""
 
@@ -711,4 +712,10 @@ function export_function () {
     export_hooks="$export_hooks
 $new_function
 builtin export -f $*"
+}
+
+# stolen from https://raw.githubusercontent.com/teddysun/across/master/bbr.sh
+function kernel_version_greater_than () {
+    local kernel_version=$(uname -r | cut -d- -f1)
+    test "$(echo "$kernel_version $1" | tr " " "\n" | sort -rV | head -n 1)" == "$kernel_version"
 }
