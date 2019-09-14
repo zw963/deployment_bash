@@ -146,7 +146,7 @@ function __rsync () {
     # 因为字符串在 shell 下被运行, 所以它可以是任何合法的命令或脚本.
     # --exclude '.*~'
 
-    rsync -htpPvr -z -L -u --rsync-path="mkdir -p $remote_dir && rsync" "$local_file" $target:"$remote_file" "${@:3}"
+    rsync -htpPvr -z -L --rsync-path="mkdir -p $remote_dir && rsync" "$local_file" $target:"$remote_file" "${@:3}"
 }
 
 function __scp () {
@@ -469,11 +469,11 @@ function configure () {
                 ${@:2}
 }
 
-function wget () {
-    local url=$1
-    local file=$(basename $url)
-    command wget --no-check-certificate -c $url -O $file
-}
+# function wget () {
+#     local url=$1
+#     local file=$(basename $url)
+#     command wget --no-check-certificate -c $url -O $file
+# }
 
 function curl () {
     command curl -sS -L "$@"
