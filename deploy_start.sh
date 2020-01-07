@@ -5,9 +5,9 @@ function detect_target () {
         target=$target
     elif [[ "$target" =~ [-_.[:alnum:]]+@.+ ]]; then
         target=${BASH_REMATCH[0]}
-    # elif [[ "$target" =~ [a-zA-Z0-9_.]+ ]]; then
-    #     # 域名
-    #     target=${BASH_REMATCH[0]}
+        # elif [[ "$target" =~ [a-zA-Z0-9_.]+ ]]; then
+        #     # 域名
+        #     target=${BASH_REMATCH[0]}
     else
         echo "\`\$target' variable must be provided in your's scripts before run scripts."
         echo 'e.g. target=localhost or target=root@123.123.123.123'
@@ -483,8 +483,8 @@ function curl () {
 }
 
 function download_and_extract () {
-    local ext=$( basename "$1" |rev|cut -d'.' -f1|rev)
-    local name=$(basename "$1" |rev|cut -d'.' -f2-|rev |sed 's#.tar$##')
+    local ext=$( basename "$1" |grep -o '\.\w*$'|cut -b2-)
+    local name=$(basename "$1" |sed 's#\..*##')
     local dest="${2-$name}"
 
     rm -rf $dest && mkdir -p $dest
@@ -505,8 +505,11 @@ function download_and_extract () {
         zip)
             local filename=$(basename $1)
 
+            # 下面的代码解决的是有些 zip 解压缩后，会创建一个子目录，
+            # 但是有的又不会的兼容性问题。
             set -ue
-            temp_dir=$(mktemp -d) &&
+            temp_dir=/tmp/$RANDOM$RANDOM
+            mkdir -p $temp_dir &&
                 curl -o $temp_dir/$filename "$1" &&
                 unzip $temp_dir/"$filename" -d "$temp_dir" &&
                 rm "$temp_dir/$filename" &&
