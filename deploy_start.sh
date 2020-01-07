@@ -5,9 +5,9 @@ function detect_target () {
         target=$target
     elif [[ "$target" =~ [-_.[:alnum:]]+@.+ ]]; then
         target=${BASH_REMATCH[0]}
-    elif [[ "$target" =~ [a-zA-Z0-9_.]+ ]]; then
-        # 域名
-        target=${BASH_REMATCH[0]}
+    # elif [[ "$target" =~ [a-zA-Z0-9_.]+ ]]; then
+    #     # 域名
+    #     target=${BASH_REMATCH[0]}
     else
         echo "\`\$target' variable must be provided in your's scripts before run scripts."
         echo 'e.g. target=localhost or target=root@123.123.123.123'
@@ -150,17 +150,20 @@ function __rsync () {
 }
 
 function __scp () {
-    local local_file remote_file remote_dir
+    local local_file remote_file
     local_file=$1
     remote_file=$2
-    remote_dir=$(dirname $remote_file)
 
     if [ ! -e "$local_file" ]; then
         echo "local file $local_file is missing ..."
         exit
     fi
 
-    ssh $target mkdir -p $remote_dir
+    if [ -f "$remote_file" ]; then
+        # create target file directory if not exist.
+        ssh $target mkdir -p $(dirname $remote_file)
+    fi
+
     scp -r "$local_file" $target:"$remote_file" "${@:3}"
 }
 
@@ -483,7 +486,9 @@ function download_and_extract () {
     local ext=$( basename "$1" |rev|cut -d'.' -f1|rev)
     local name=$(basename "$1" |rev|cut -d'.' -f2-|rev |sed 's#.tar$##')
     local dest="${2-$name}"
-    mkdir -p $dest
+
+    rm -rf $dest && mkdir -p $dest
+
     case $ext in
         gz|tgz)
             curl "$1" |tar -zxvf - -C "$dest" --strip-components=1
@@ -498,21 +503,22 @@ function download_and_extract () {
             curl "$1" |tar --lzma -xvf - -C "$dest" --strip-components=1
             ;;
         zip)
-            local fullname=$(basename $1)
+            local filename=$(basename $1)
 
+            set -ue
             temp_dir=$(mktemp -d) &&
-                curl -o $temp_dir/$fullname "$1" &&
-                unzip $temp_dir/"$fullname" -d "$temp_dir" &&
-                rm "$temp_dir/$fullname" &&
+                curl -o $temp_dir/$filename "$1" &&
+                unzip $temp_dir/"$filename" -d "$temp_dir" &&
+                rm "$temp_dir/$filename" &&
                 shopt -s dotglob &&
                 local f=("$temp_dir"/*) &&
                 if (( ${#f[@]} == 1 )) && [[ -d "${f[0]}" ]] ; then
                     mv "$temp_dir"/*/* "$dest"
                 else
                     mv "$temp_dir"/* "$dest"
-                fi && rmdir "$temp_dir"/* "$temp_dir"
+                fi && rm -rf "$temp_dir"
+            set +ue
     esac
-
 }
 
 function diff () {
