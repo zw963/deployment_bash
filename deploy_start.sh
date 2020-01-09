@@ -505,6 +505,9 @@ function download_and_extract () {
         zip)
             local filename=$(basename $1)
 
+            # Detect unzip if exist
+            which unzip &>/dev/null || package unzip
+
             # 下面的代码解决的是有些 zip 解压缩后，会创建一个子目录，
             # 但是有的又不会的兼容性问题。
             set -ue
@@ -623,6 +626,7 @@ postgresql postgresql-client-common
 
     OLDIFS="$IFS" && IFS=$'\n'
     for map in $centos_debian_map_list; do
+        # 用来生成 case 语句。
         case_statement="${case_statement}
 ${map% *})
   installed=\"\$installed ${map#* }\"
