@@ -78,12 +78,19 @@ set -ue
 
 export -f deploy_start
 
-if ! which perl &>/dev/null; then
+function package_install_command () {
     if grep -qs 'Ubuntu\|Mint\|Debian' /etc/issue; then
-        apt-get install -y --no-install-recommends perl
+        apt-get install -y --no-install-recommends "$@"
     elif grep -qs CentOS /etc/redhat-release; then
-        yum install -y perl
+        # if Want get centos version, use 'rpm -q centos-release'.
+        yum install -y "$@"
+    elif grep -qs openSUSE /etc/issue; then
+        zypper -n --gpg-auto-import-keys in --no-recommends "$@"
     fi
+}
+
+if ! which perl &>/dev/null; then
+    package_install_command perl
 fi
 
 function append () {
@@ -591,12 +598,6 @@ function package () {
 
     if grep -qs 'Ubuntu\|Mint\|Debian' /etc/issue; then
         apt-get update
-        install="apt-get install -y --no-install-recommends"
-    elif grep -qs CentOS /etc/redhat-release; then
-        # if Want get centos version, use 'rpm -q centos-release'.
-        install="yum install -y"
-    elif grep -qs openSUSE /etc/issue; then
-        install="zypper -n --gpg-auto-import-keys in --no-recommends"
     fi
 
     installed=
@@ -685,11 +686,11 @@ esac
     fi
 
     for i in $basic_tools; do
-        $install $i
+        package_install_command $i
     done
 
     for i in $installed; do
-        $install $i
+        package_install_command $i
     done
 }
 
