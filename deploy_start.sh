@@ -650,7 +650,10 @@ esac
 "
         done
     elif grep -qs CentOS /etc/redhat-release; then
-        basic_tools="$basic_tools yum-cron yum-utils epel-release"
+        basic_tools="$basic_tools yum-utils epel-release"
+        # centos 7 yum-cron
+        # centos 8 dnf-automatic
+        # systemctl enable --now dnf-automatic.timer
         for i in "$@"; do
             case "$i" in
                 compile-tools)
