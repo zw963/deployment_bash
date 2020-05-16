@@ -491,7 +491,7 @@ function curl () {
 
 function download_and_extract () {
     local ext=$( basename "$1" |grep -o '\.\w*$'|cut -b2-)
-    local name=$(basename "$1" |sed 's#\..*##')
+    local name=$(basename "$1" |sed 's#\.tar\(\.gz\|\.bz2\|\.lzma\)\|\.tgz\|\.t\?xz\|\.zip##')
     local dest="${2-$name}"
 
     rm -rf $dest && mkdir -p $dest
