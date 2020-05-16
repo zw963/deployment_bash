@@ -199,28 +199,29 @@ function backup () {
 function daemon () {
     local name=$1
     local command=$2
+    local type=${3-simple}
 
     # getent passwd $name || useradd $name -s /sbin/nologin
 
     # systemd document chinese version.
     # http://www.jinbuguo.com/systemd/systemd.service.html
 
-    cat <<HEREDOC > /etc/systemd/system/$name.service
+    cat <<"HEREDOC" > /etc/systemd/system/$name.service
      [Unit]
      Description=$name Service
      After=syslog.target network.target
 
      [Service]
+     Type=${type}
+     Restart=always
+     LimitCORE=infinity
      LimitNOFILE=51200
      LimitNPROC=51200
-     LimitCORE=infinity
      Environment=LD_LIBRARY_PATH=/usr/lib64
-     Type=forking
      ExecStart=$command
      ExecStop=/bin/kill -TERM \$MAINPID
      ExecReload=/bin/kill -HUP \$MAINPID
      PIDFile=/var/run/${name}.pid
-     Restart=always
 
      [Install]
      WantedBy=multi-user.target
