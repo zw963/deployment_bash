@@ -507,6 +507,9 @@ function download_and_extract () {
         xz|txz)
             curl "$1" |tar -Jxvf - -C "$dest" --strip-components=1
             ;;
+        zst|zstd)
+            curl "$1" |tar --use-compress-program zstd -xvf - -C "$dest" --strip-components=1
+            ;;
         lzma)
             curl "$1" |tar --lzma -xvf - -C "$dest" --strip-components=1
             ;;
