@@ -395,10 +395,12 @@ function perl_replace() {
     local match_newline=$4
 
     if [ -z "$replace_all_matched" ]; then
-        unset replace_all_matched
+        globally=''
+    else
+        globally=' globally'
     fi
 
-    perl -i -ne "s$regexp$replace${replace_all_matched}${match_newline}; print \$_; unless ($& eq \"\") {print STDERR \"\`\033[0;33m$&\033[0m' was replaced with \`\033[0;33m${escaped_replace}\033[0m'${replace_all_matched+ globally}!\n\"};" "$5" "$6"
+    perl -i -ne "s$regexp$replace${replace_all_matched}${match_newline}; print \$_; unless ($& eq \"\") {print STDERR \"\`\033[0;33m$&\033[0m' was replaced with \`\033[0;33m${escaped_replace}\033[0m'${globally}!\n\"};" "$5" "$6"
 }
 
 # 为了支持多行匹配，使用 perl 正则, 比 sed 好用一百倍！
