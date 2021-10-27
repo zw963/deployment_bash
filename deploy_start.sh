@@ -400,7 +400,7 @@ function perl_replace() {
         globally=' globally'
     fi
 
-    perl -i -ne "s$regexp$replace${replace_all_matched}${match_newline}; print \$_; unless ($& eq \"\") {print STDERR \"\`\033[0;33m$&\033[0m' was replaced with \`\033[0;33m${escaped_replace}\033[0m'${globally}!\n\"};" "$5" "$6"
+    perl -i -ne "s$regexp$replace${replace_all_matched}${match_newline}; print \$_; unless ($& eq \"\") {print STDERR \"\`\033[0;33m$&\033[0m' was replaced with \`\033[0;33m${escaped_replace}\033[0m'${globally} for \`[0m[0;34m$6[0m'!\n\"};" "$5" "$6"
 }
 
 # 为了支持多行匹配，使用 perl 正则, 比 sed 好用一百倍！
@@ -412,7 +412,7 @@ function replace_multiline () {
     # 这个 -0 必须的，-0 表示，将空白字符作为 input record separators ($/)
     # 这也意味着，它会将文件内的所有内容整体作为一个字符串一次性读取。
     # 感觉类似于 -0777 (file slurp mode) ?
-    perl_replace "$regexp" "$replace" "g" "s" -0 "$file"
+    perl_replace "$regexp" "$replace" "g" "s" -0777 "$file"
 }
 
 function replace_multiline1 () {
@@ -420,7 +420,7 @@ function replace_multiline1 () {
     local replace=$2
     local file=$3
 
-    perl_replace "$regexp" "$replace" "" "s" -0 "$file"
+    perl_replace "$regexp" "$replace" "" "s" -0777 "$file"
 }
 
 # 这个和 multiline 的区别仅仅在于，multi 里面 . 也匹配 newline, regex 不会
@@ -429,7 +429,7 @@ function replace_regex () {
     local replace=$2
     local file=$3
 
-    perl_replace "$regexp" "$replace" "g" "" -0 "$file"
+    perl_replace "$regexp" "$replace" "g" "" -0777 "$file"
 }
 
 function replace_regex1 () {
@@ -437,7 +437,7 @@ function replace_regex1 () {
     local replace=$2
     local file=$3
 
-    perl_replace "$regexp" "$replace" "" "" -0 "$file"
+    perl_replace "$regexp" "$replace" "" "" -0777 "$file"
 }
 
 function replace_string () {
@@ -446,7 +446,7 @@ function replace_string () {
     local replace=$2
     local file=$3
 
-    perl_replace "$regexp" "$replace" "g" "" -0 "$file"
+    perl_replace "$regexp" "$replace" "g" "" -0777 "$file"
 }
 
 function replace_string1 () {
@@ -455,7 +455,7 @@ function replace_string1 () {
     local replace=$2
     local file=$3
 
-    perl_replace "$regexp" "$replace" "" "" -0 "$file"
+    perl_replace "$regexp" "$replace" "" "" -0777 "$file"
 }
 
 function update_config () {
