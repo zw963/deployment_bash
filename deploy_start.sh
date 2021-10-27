@@ -367,6 +367,8 @@ function replace_escape1() {
     printf %s "${REPLY%$'\n'}"
 }
 
+# 基于 perl 的 replace 函数，目的是为了解决 sed 无法很好的全文匹配的问题。
+# 这几个函数的做法，是一次性读取文件所有内容作为一个字符串，再使用 PCRE 语法匹配/替换
 
 function match_multiline() {
     escaped_regex=$(echo "$1" |sed 's#/#\\\/#g')
@@ -380,50 +382,78 @@ function match_multiline() {
 }
 
 function perl_replace() {
-    local regexp replace
-    regexp=$1
-    # 注意 replace 当中的特殊变量, 例如, $& $1 $2 的手动转义.
+    local regexp=$1
+    # 注意：$1 在 perl 里面是一个矢量, 因此它有 $[ 会出错，因为 perl 会认为在通过 []
+    # 方法读取矢量的元素，所以记得在 placement 中 [ 也要转义。
     # 写完一定测试一下，perl 变量引用: http://www.perlmonks.org/?node_id=353259
-    replace=$2
-    escaped_replace=$(echo "$replace" |sed 's#"#\\"#g')
+    local replace=$2
+    local escaped_replace=$(echo "$replace" |sed 's#"#\\"#g')
 
-    perl -i -ne "s$regexp$replacegs; print \$_; unless ($& eq \"\") {print STDERR \"\`\033[0;33m$&\033[0m' was replaced with \`\033[0;33m${escaped_replace}\033[0m'\n\"};" "${@:3}"
+    # 和 sed 类似，就是 g, 表示是否全局替换，不加只替换第一个
+    local replace_all_matched=$3
+    # 就是 s, 新增的话, . 也匹配 new_line
+    local match_newline=$4
+
+    if [ -z "$replace_all_matched" ]; then
+        unset replace_all_matched
+    fi
+
+    perl -i -ne "s$regexp$replace${replace_all_matched}${match_newline}; print \$_; unless ($& eq \"\") {print STDERR \"\`\033[0;33m$&\033[0m' was replaced with \`\033[0;33m${escaped_replace}\033[0m'${replace_all_matched+ globally}!\n\"};" "$5" "$6"
 }
 
 # 为了支持多行匹配，使用 perl 正则, 比 sed 好用一百倍！
 function replace_multiline () {
-    local regexp replace file
-    regexp=$1
-    replace=$2
-    file=$3
-
-    perl_replace "$regexp" "$replace" -0 "$file"
-}
-
-function replace () {
-    local regexp replace file content
-    regexp=$1
-    replace=$2
-    file=$3
-
-    perl_replace "$regexp" "$replace" "$file"
-}
-
-function replace_regex () {
-    local regexp="$1"
-    local replace="$2"
+    local regexp=$1
+    local replace=$2
     local file=$3
 
-    replace_multiline "$regexp" "$replace" "$file"
+    # 这个 -0 必须的，-0 表示，将空白字符作为 input record separators ($/)
+    # 这也意味着，它会将文件内的所有内容整体作为一个字符串一次性读取。
+    # 感觉类似于 -0777 (file slurp mode) ?
+    perl_replace "$regexp" "$replace" "g" "s" -0 "$file"
+}
+
+function replace_multiline1 () {
+    local regexp=$1
+    local replace=$2
+    local file=$3
+
+    perl_replace "$regexp" "$replace" "" "s" -0 "$file"
+}
+
+# 这个和 multiline 的区别仅仅在于，multi 里面 . 也匹配 newline, regex 不会
+function replace_regex () {
+    local regexp=$1
+    local replace=$2
+    local file=$3
+
+    perl_replace "$regexp" "$replace" "g" "" -0 "$file"
+}
+
+function replace_regex1 () {
+    local regexp=$1
+    local replace=$2
+    local file=$3
+
+    perl_replace "$regexp" "$replace" "" "" -0 "$file"
 }
 
 function replace_string () {
     # 转化输入的字符串为 literal 形式
     local regexp="\\Q$1\\E"
-    local replace="$2"
+    local replace=$2
     local file=$3
 
-    replace_multiline "$regexp" "$replace" "$file"
+    perl_replace "$regexp" "$replace" "g" "" -0 "$file"
+}
+
+function replace_string1 () {
+    # 转化输入的字符串为 literal 形式
+    local regexp="\\Q$1\\E"
+    local replace=$2
+    local file=$3
+
+    perl_replace "$regexp" "$replace" "" "" -0 "$file"
 }
 
 function update_config () {
