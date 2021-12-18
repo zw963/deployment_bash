@@ -731,6 +731,40 @@ esac
     done
 }
 
+function is_listen () {
+    local port=$*
+    sudo netstat -tunl |fgrep 'LISTEN' |awk '{print $4}' |grep ":${port}$"
+}
+
+function deploy_tls () {
+    set -u
+    local domain_name=$1
+    local reload_command=$2
+
+    package socat
+    # install acme.sh script
+    curl  https://get.acme.sh | bash
+    ~/.acme.sh/acme.sh  --upgrade  --auto-upgrade
+    ~/.acme.sh/acme.sh --set-default-ca --server letsencrypt
+
+    if is_listen 80 && which nginx &>/dev/null; then
+        systemctl stop nginx
+        ~/.acme.sh/acme.sh --issue --standalone -d "${domain_name}" -k ec-256 --force
+        systemctl start nginx
+    fi
+
+    mkdir -p /etc/ssl/$domain_name
+
+    ~/.acme.sh/acme.sh --installcert --ecc --force \
+                       -d "${domain_name}" \
+                       --fullchainpath /etc/ssl/$domain_name/fullchain.pem \
+                       --keypath /etc/ssl/$domain_name/privkey.pem \
+                       --reloadcmd "$reload_command"
+
+
+    echo "Certificate install to \`[0m[0;33m/etc/ssl/$domain_name/fullchain.pem[0m', \`[0m[0;33m/etc/ssl/$domain_name/privkey.pem[0m'"
+}
+
 # for use with asuswrt merlin only.
 function add_service {
     [ -e /jffs/scripts/$1 ] || echo '#!/bin/sh' > /jffs/scripts/$1
