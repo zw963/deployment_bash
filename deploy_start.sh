@@ -628,7 +628,7 @@ function package () {
     # for Ubuntu build-essential
     # for centos yum groupinstall "Development Tools"
     local compile_tools='gcc autoconf automake make libtool bzip2 unzip patch wget curl perl'
-    local basic_tools='mlocate git tree'
+    local basic_tools='mlocate git tree mkdir'
 
     if grep -qs 'Ubuntu\|Mint\|Debian' /etc/issue; then
         apt-get update
@@ -655,6 +655,7 @@ mbedtls-devel libmbedtls-dev
 c-ares-devel libc-ares-dev
 postgresql-devel libpq-dev
 postgresql postgresql-client-common
+sqlite-devel libsqlite3-dev
 "
     case_statement=""
 
@@ -670,7 +671,8 @@ ${map% *})
     IFS="$OLDIFS"
 
     if grep -qs 'Ubuntu\|Mint\|Debian' /etc/issue; then
-        basic_tools="$basic_tools"
+        # apt-file search filename
+        basic_tools="$basic_tools apt-file"
         for i in "$@"; do
             eval "
 case \"$i\" in
