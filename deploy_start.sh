@@ -581,8 +581,8 @@ function expose_port () {
             # sudo ufw allow 22336/udp
             # sudo ufw allow 22336/tcp
             # ufw 中, 允许端口 1098, ufw allow 1098
-            # rc.local "iptables -I INPUT -p tcp --dport $port -j ACCEPT"
-            # rc.local "iptables -I INPUT -p udp --dport $port -j ACCEPT"
+            rc.local "iptables -I INPUT -p tcp --dport $port -j ACCEPT"
+            rc.local "iptables -I INPUT -p udp --dport $port -j ACCEPT"
             echo 'no need install iptables'
         elif grep -qs CentOS /etc/redhat-release; then
             if firewall-cmd --state &>/dev/null; then
