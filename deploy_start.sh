@@ -510,11 +510,9 @@ function configure () {
                 ${@:2}
 }
 
-# function wget () {
-#     local url=$1
-#     local file=$(basename $url)
-#     command wget --no-check-certificate -c $url -O $file
-# }
+function wget () {
+    command wget --no-check-certificate -c "$@"
+}
 
 function curl () {
     command curl -sS -L "$@"
