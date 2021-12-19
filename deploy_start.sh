@@ -751,6 +751,14 @@ function deploy_tls () {
     set -u
     local domain_name=$1
     local reload_command=$2
+    local stop_nginx=false
+
+    domain_name_ip=$(ping "stocks.zw963.online" -c 1 | sed '1{s/[^(]*(//;s/).*//;q}')
+
+    if [[ "$domain_name_ip" != "$targetip" ]]; then
+        echo "Your $domain_name ip is not same as $targetip, exit ..."
+        exit 1
+    fi
 
     package socat
     # install acme.sh script
@@ -759,10 +767,13 @@ function deploy_tls () {
     ~/.acme.sh/acme.sh --set-default-ca --server letsencrypt
 
     if is_listen 80 && which nginx &>/dev/null; then
-        systemctl stop nginx
-        ~/.acme.sh/acme.sh --issue --standalone -d "${domain_name}" -k ec-256 --force
-        systemctl start nginx
+        stop_nginx=true
+        reload_command="${reload_command}; systemctl restart nginx;"
     fi
+
+    [ "$stop_nginx" == true ] && systemctl stop nginx
+    ~/.acme.sh/acme.sh --issue --standalone -d "${domain_name}" -k ec-256 --force
+    [ "$stop_nginx" == true ] && systemctl start nginx
 
     mkdir -p /etc/ssl/$domain_name
 
@@ -772,8 +783,12 @@ function deploy_tls () {
                        --keypath /etc/ssl/$domain_name/privkey.pem \
                        --reloadcmd "$reload_command"
 
-
-    echo "Certificate install to \`[0m[0;33m/etc/ssl/$domain_name/fullchain.pem[0m', \`[0m[0;33m/etc/ssl/$domain_name/privkey.pem[0m'"
+    if [[ $(stat -c%s /etc/ssl/$domain_name/fullchain.pem) -ge 5000 ]]; then
+        echo "Certificate install to \`[0m[0;33m/etc/ssl/$domain_name/fullchain.pem[0m', \`[0m[0;33m/etc/ssl/$domain_name/privkey.pem[0m'"
+    else
+        echo 'Install certificate failed?'
+        exit 1
+    fi
 }
 
 # for use with asuswrt merlin only.
