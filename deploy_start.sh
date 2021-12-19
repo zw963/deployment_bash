@@ -215,8 +215,8 @@ function daemon () {
      Type=$type
      Restart=always
      LimitCORE=infinity
-     LimitNOFILE=51200
-     LimitNPROC=51200
+     LimitNOFILE=1000000
+     LimitNPROC=500
      Environment=LD_LIBRARY_PATH=/usr/lib64
      ExecStart=$command
      ExecStop=/bin/kill -TERM \$MAINPID
@@ -231,10 +231,6 @@ HEREDOC
     systemctl start $name
     systemctl enable $name
     systemctl status $name
-
-    # 停止和关闭的命令如下:
-    # systemctl stop shadowsocks
-    # systemctl disable shadowsocks
 }
 
 function daemon1 () {
@@ -522,24 +518,25 @@ function download_and_extract () {
     local ext=$( basename "$1" |grep -o '\.\w*$'|cut -b2-)
     local name=$(basename "$1" |sed 's#\.tar\(\.gz\|\.bz2\|\.lzma\)\|\.tgz\|\.t\?xz\|\.zip##')
     local dest="${2-$name}"
+    local strip_level="${3-1}"
 
     rm -rf $dest && mkdir -p $dest
 
     case $ext in
         gz|tgz)
-            wget "$1" -O - |tar -zxvf - -C "$dest" --strip-components=1
+            wget "$1" -O - |tar -zxvf - -C "$dest" --strip-components=${strip_level}
             ;;
         bz2)
-            wget "$1" -O - |tar -jxvf - -C "$dest" --strip-components=1
+            wget "$1" -O - |tar -jxvf - -C "$dest" --strip-components=${strip_level}
             ;;
         xz|txz)
-            wget "$1" -O - |tar -Jxvf - -C "$dest" --strip-components=1
+            wget "$1" -O - |tar -Jxvf - -C "$dest" --strip-components=${strip_level}
             ;;
         zst|zstd)
-            wget "$1" -O - |tar --use-compress-program zstd -xvf - -C "$dest" --strip-components=1
+            wget "$1" -O - |tar --use-compress-program zstd -xvf - -C "$dest" --strip-components=${strip_level}
             ;;
         lzma)
-            wget "$1" -O - |tar --lzma -xvf - -C "$dest" --strip-components=1
+            wget "$1" -O - |tar --lzma -xvf - -C "$dest" --strip-components=${strip_level}
             ;;
         zip)
             local filename=$(basename $1)
