@@ -577,19 +577,30 @@ function sshkeygen () {
 function expose_port () {
     for port in "$@"; do
         if grep -qs 'Ubuntu\|Mint\|Debian' /etc/issue; then
-            # systemctl status ufw
-            # sudo ufw allow 22336/udp
-            # sudo ufw allow 22336/tcp
-            # ufw 中, 允许端口 1098, ufw allow 1098
+            if systemctl status ufw; then
+                systemctl stop ufw
+                systemctl disable ufw
+                # sudo ufw allow 22336/udp
+                # sudo ufw allow 22336/tcp
+            fi
             rc_local "iptables -I INPUT -p tcp --dport $port -j ACCEPT"
             rc_local "iptables -I INPUT -p udp --dport $port -j ACCEPT"
             echo 'no need install iptables'
         elif grep -qs CentOS /etc/redhat-release; then
-            if firewall-cmd --state &>/dev/null; then
-                firewall-cmd --zone=public --add-port=$port/tcp --permanent
-                firewall-cmd --zone=public --add-port=$port/udp --permanent
-                firewall-cmd --reload   # 这个只在 --permanent 参数存在时, 才需要
-                # firewall-cmd --zone=public --list-ports
+            if systemctl status firewalld; then
+                systemctl stop firewalld
+                systemctl disable firewalld
+                # if firewall-cmd --state &>/dev/null; then
+                #     firewall-cmd --zone=public --add-port=$port/tcp --permanent
+                #     firewall-cmd --zone=public --add-port=$port/udp --permanent
+                #     firewall-cmd --reload   # 这个只在 --permanent 参数存在时, 才需要
+                #     # firewall-cmd --zone=public --list-ports
+                # fi
+            fi
+
+            if ! cat /etc/selinux/config |fgrep 'SELINUX=disabled'; then
+                sed -i 's/^SELINUX=.*/SELINUX=disabled/' /etc/selinux/config
+                setenforce 0
             fi
         elif grep -qs openSUSE /etc/issue; then
             yast firewall services add tcpport=$port zone=EXT
