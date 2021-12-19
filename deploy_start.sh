@@ -783,6 +783,14 @@ HEREDOC
     sysctl -n net.ipv4.tcp_congestion_control |grep bbr
 }
 
+function install_jq () {
+    wget https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 -O /usr/bin/jq && chmod +x /usr/bin/jq
+    # targetip=$(curl -4L api64.ipify.org)
+    # signedcert=$(xray tls cert -domain="$targetip" -name="$targetip" -org="$targetip" -expire=87600h)
+    # echo $signedcert | jq '.certificate[]' | sed 's/\"//g' | tee /etc/xray/self_signed_cert.pem
+    # echo $signedcert | jq '.key[]' | sed 's/\"//g' |tee /etc/xray/self_signed_key.pem
+}
+
 function is_listen () {
     local port=$*
     netstat -tunl |fgrep 'LISTEN' |awk '{print $4}' |grep ":${port}$"
