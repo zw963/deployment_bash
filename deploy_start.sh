@@ -812,9 +812,11 @@ function deploy_tls () {
         reload_command="${reload_command}; systemctl restart nginx;"
     fi
 
-    [ "$stop_nginx" == true ] && systemctl stop nginx
-    ~/.acme.sh/acme.sh --issue --standalone -d "${domain_name}" -k ec-256 --force
-    [ "$stop_nginx" == true ] && systemctl start nginx
+    if ! [ -e ~/.acme.sh/${domain_name}_ecc/fullchain.cer ]; then
+        [ "$stop_nginx" == true ] && systemctl stop nginx
+        ~/.acme.sh/acme.sh --issue --standalone -d "${domain_name}" -k ec-256 --force
+        [ "$stop_nginx" == true ] && systemctl start nginx
+    fi
 
     mkdir -p /etc/ssl/$domain_name
 
