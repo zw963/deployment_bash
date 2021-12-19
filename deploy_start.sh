@@ -742,8 +742,10 @@ esac
     done
 }
 
-function sysctl_for_proxy () {
-    cat <<'HEREDOC' > /etc/sysctl.d/99-proxy.conf
+function config_sysctl_for_proxy () {
+    conf_file_name=${1-99-proxy.conf}
+
+    cat <<'HEREDOC' > /etc/sysctl.d/${conf_file_name}
 fs.file-max=818354
 
 net.core.rmem_max=67108864
@@ -770,8 +772,8 @@ net.ipv4.tcp_fastopen=3
 HEREDOC
 
     if kernel_version_greater_than 4.9 && modprobe tcp_bbr && lsmod | grep bbr; then
-        echo "net.core.default_qdisc=fq" >> /etc/sysctl.d/99-proxy.conf
-        echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.d/99-proxy.conf
+        echo "net.core.default_qdisc=fq" >> /etc/sysctl.d/${conf_file_name}
+        echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.d/${conf_file_name}
     fi
 
     sysctl -p > /dev/null
