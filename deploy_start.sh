@@ -511,7 +511,7 @@ function configure () {
 }
 
 function wget () {
-    command wget --no-check-certificate -c "$@"
+    command wget --no-check-certificate --quiet -c "$@"
 }
 
 function curl () {
@@ -637,7 +637,7 @@ function package () {
     # for Ubuntu build-essential
     # for centos yum groupinstall "Development Tools"
     local compile_tools='gcc autoconf automake make libtool bzip2 unzip patch wget curl perl'
-    local basic_tools='mlocate git coreutils'
+    local basic_tools='mlocate git coreutils binutils'
 
     if grep -qs 'Ubuntu\|Mint\|Debian' /etc/issue; then
         apt-get update
@@ -774,13 +774,16 @@ HEREDOC
     if kernel_version_greater_than 4.9 && modprobe tcp_bbr && lsmod | grep bbr; then
         echo "net.core.default_qdisc=fq" >> /etc/sysctl.d/${conf_file_name}
         echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.d/${conf_file_name}
+
+        sysctl -p > /dev/null
+
+        # test bbr is enabled
+        echo 'Checking bbr support for current VPS, you may need reboot after config sysctl settings if exit here.'
+        sysctl net.ipv4.tcp_available_congestion_control |grep bbr
+        sysctl -n net.ipv4.tcp_congestion_control |grep bbr
+    else
+        sysctl -p > /dev/null
     fi
-
-    sysctl -p > /dev/null
-
-    # test bbr is enabled
-    sysctl net.ipv4.tcp_available_congestion_control |grep bbr
-    sysctl -n net.ipv4.tcp_congestion_control |grep bbr
 }
 
 function install_jq () {
