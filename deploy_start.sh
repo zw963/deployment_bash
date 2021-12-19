@@ -252,7 +252,7 @@ function daemon1 () {
     fi
 
     [ -e /etc/rc.func ] && backup /etc/rc.func
-    curl https://raw.githubusercontent.com/zw963/deployment_bash/master/rc.func -o /etc/rc.func
+    wget -O /etc/rc.func https://raw.githubusercontent.com/zw963/deployment_bash/master/rc.func
 
     cat <<HEREDOC |tee /etc/init.d/$package_name
 #!/bin/sh
@@ -754,7 +754,7 @@ function deploy_tls () {
 
     package socat
     # install acme.sh script
-    curl  https://get.acme.sh | bash
+    wget -O -  https://get.acme.sh | bash
     ~/.acme.sh/acme.sh  --upgrade  --auto-upgrade
     ~/.acme.sh/acme.sh --set-default-ca --server letsencrypt
 
