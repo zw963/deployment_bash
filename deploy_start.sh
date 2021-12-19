@@ -852,6 +852,16 @@ function add_service {
 
 # only support define a bash variable, bash array variable not supported.
 function __export () {
+    if [ $# == 0 ]; then
+        echo 'Use export like this: export var=val'
+        return 1
+    fi
+
+    if [ $# -gt 1 ]; then
+        echo 'Only one variable be allowed.'
+        return 1
+    fi
+
     local name=$(echo "$*" |cut -d'=' -f1)
     local value=$(echo "$*" |cut -d'=' -f2-)
     local escaped_value=$(echo "$value" |sed 's#\([\$"\`]\)#\\\1#g')
