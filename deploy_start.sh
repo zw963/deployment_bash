@@ -88,12 +88,12 @@ function package_exists () {
 
 function package_install_command () {
     if grep -qs 'Ubuntu\|Mint\|Debian' /etc/issue; then
-        apt-get install -y --no-install-recommends "$@"
+        sudo apt-get install -y --no-install-recommends "$@"
     elif grep -qs CentOS /etc/redhat-release; then
         # if Want get centos version, use 'rpm -q centos-release'.
-        yum install -y "$@"
+        sudo yum install -y "$@"
     elif grep -qs openSUSE /etc/issue; then
-        zypper -n --gpg-auto-import-keys in --no-recommends "$@"
+        sudo zypper -n --gpg-auto-import-keys in --no-recommends "$@"
     fi
 }
 
@@ -645,7 +645,7 @@ function package () {
     local basic_tools='mlocate git coreutils binutils rsync'
 
     if grep -qs 'Ubuntu\|Mint\|Debian' /etc/issue; then
-        apt-get update
+        sudo apt-get update
     fi
 
     installed=
