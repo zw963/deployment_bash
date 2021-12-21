@@ -923,7 +923,7 @@ function deploy_tls () {
     local reload_command=$2
     local stop_nginx=false
 
-    domain_name_ip=$(ping "stocks.zw963.online" -c 1 | sed '1{s/[^(]*(//;s/).*//;q}')
+    domain_name_ip=$(ping "${domain_name}" -c 1 | sed '1{s/[^(]*(//;s/).*//;q}')
 
     if [[ "$domain_name_ip" != "$targetip" ]]; then
         echo "Your $domain_name ip is not same as $targetip, exit ..."
@@ -971,32 +971,30 @@ function add_service {
 }
 
 
-# only support define a bash variable, bash array variable not supported.
-function __export () {
-    if [ $# == 0 ]; then
-        echo 'Use export like this: export var=val'
-        return 1
-    fi
+# # only support define a bash variable, bash array variable not supported.
+# function export () {
+#     if [ $# == 0 ]; then
+#         echo 'Use export like this: export var=val'
+#         return 1
+#     fi
 
-    if [ $# -gt 1 ]; then
-        echo 'Only one variable be allowed.'
-        return 1
-    fi
+#     if [ $# -gt 1 ]; then
+#         echo 'Only one variable be allowed.'
+#         return 1
+#     fi
 
-    local name=$(echo "$*" |cut -d'=' -f1)
-    local value=$(echo "$*" |cut -d'=' -f2-)
-    local escaped_value=$(echo "$value" |sed 's#\([\$"\`]\)#\\\1#g')
+#     local name=$(echo "$*" |cut -d'=' -f1)
+#     local value=$(echo "$*" |cut -d'=' -f2-)
+#     local escaped_value=$(echo "$value" |sed 's#\([\$"\`]\)#\\\1#g')
 
-    eval 'builtin export $name="$value"'
-    export_hooks="$export_hooks builtin export $name=\"$escaped_value\""
-}
+#     eval 'builtin export $name="$value"'
+#     export_hooks="$export_hooks builtin export $name=\"$escaped_value\""
+# }
 
-alias export=__export
-
-function export_variable () {
-    eval 'builtin export $*'
+function export () {
+    eval 'builtin export $@'
     export_hooks="$export_hooks
- builtin export $*"
+ builtin export $@"
 }
 
 function export_function () {
