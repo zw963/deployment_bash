@@ -642,7 +642,7 @@ function package () {
     # for Ubuntu build-essential
     # for centos yum groupinstall "Development Tools"
     local compile_tools='gcc autoconf automake make libtool bzip2 unzip patch wget curl perl'
-    local basic_tools='mlocate git coreutils binutils'
+    local basic_tools='mlocate git coreutils binutils rsync'
 
     if grep -qs 'Ubuntu\|Mint\|Debian' /etc/issue; then
         apt-get update
