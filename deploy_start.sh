@@ -816,14 +816,14 @@ function deploy_nginx () {
     set -ue
 
     if [[ $(cat /etc/*-release) =~ Ubuntu|Debian ]]; then
-        # 使用下面的命令查看 Ubuntu 发布版的编号
-        # code_name=$(cat /etc/*-release |grep _CODENAME |cut -d'=' -f2)
-        code_name=$(lsb_release -cs)
-
-        sudo wget https://nginx.org/keys/nginx_signing.key
-        sudo apt-key add nginx_signing.key
-
         if ! package_exists nginx; then
+            # 使用下面的命令查看 Ubuntu 发布版的编号
+            # code_name=$(cat /etc/*-release |grep _CODENAME |cut -d'=' -f2)
+            code_name=$(lsb_release -cs)
+
+            sudo wget https://nginx.org/keys/nginx_signing.key
+            sudo apt-key add nginx_signing.key
+
             if [[ $(lsb_release -d) =~ Ubuntu ]]; then
                 cat <<HEREDOC | sudo tee /etc/apt/sources.list.d/nginx.list
 deb https://nginx.org/packages/ubuntu/ ${code_name} nginx
@@ -840,34 +840,7 @@ HEREDOC
             sudo apt-get install -y --no-install-recommends nginx
             sudo systemctl enable nginx
         fi
-
-        if false && ! package_exists python-certbot-nginx; then
-
-            # sudo snap install core; sudo snap refresh core
-            # sudo snap install --classic certbot
-            # sudo ln -s /snap/bin/certbot /usr/bin/certbot
-
-            add-apt-repository ppa:certbot/certbot
-            apt update
-            apt install python3-certbot-nginx
-            # 1. Run `sudo certbot --nginx' to configure current domain.
-            # 2. Test if can renew certbot successful. `sudo certbot renew --dry-run'
-            # 3. Add following crontab, will date cert first day of month.
-            #    0 0 1 * * /usr/bin/certbot renew
-            # more detail, check https://certbot.eff.org/
-
-            sudo certbot certonly --nginx
-        fi
     elif [[ $(cat /etc/*-release) =~ CentOS ]]; then
-        if ! package_exists python3-certbot-nginx; then
-            yum install -y certbot python3-certbot-nginx
-            # 1. Run `sudo certbot --nginx' to configure current domain.
-            # 2. Test if can renew certbot successful. `sudo certbot renew --dry-run'
-            # 3. Add following crontab, will date cert first day of month.
-            #    0 0 1 * * /usr/bin/certbot renew
-            # more detail, check https://certbot.eff.org/        fi
-        fi
-
         if ! package_exists nginx; then
             # wget https://nginx.org/packages/centos/8/x86_64/RPMS/nginx-1.20.1-1.el8.ngx.x86_64.rpm
             # sudo rpm -ivh nginx-1.20.1-1.el8.ngx.x86_64.rpm
@@ -917,10 +890,107 @@ function deploy_nginx_bri_support () {
     # load_module modules/ngx_http_brotli_static_module.so;
 }
 
+function deploy_pg () {
+    if ! which -a pg_dump &>/dev/null; then
+        local version=$1
+
+        if [[ $(cat /etc/*-release) =~ Ubuntu|Debian ]]; then
+            sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+            wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+            sudo apt-get update
+            sudo apt-get -y install postgresql-${version} libpq-dev postgresql-server-dev-${version}
+
+            # 初始化数据库, 这一步似乎做了？安装时没注意。
+            # sudo /usr/lib/postgresql/14/bin/initdb -D ???
+
+            sudo systemctl enable postgresql
+            sudo systemctl start postgresql
+        elif [[ $(cat /etc/*-release) =~ CentOS ]]; then
+            # 导入 pg 源
+            sudo dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+            # 关闭 centos 内置的 pg 模块
+            sudo dnf -qy module disable postgresql
+            # 安装 pg
+            sudo dnf install -y postgresql${version}-devel
+            # 初始化数据库
+            sudo /usr/pgsql-${version}/bin/postgresql-${version}-setup initdb
+
+            sudo systemctl enable postgresql-${version}
+            sudo systemctl start postgresql-${version}
+
+            # For install sequel_pg succesful, we have to add pg_config into $PATH
+            sed -i '1iPATH=/usr/pgsql-${version}/bin:$PATH'
+        fi
+
+        # 这一步，在 rake db:create 里面做
+        # sudo -u postgres psql -p 5432 -c "ALTER USER postgres WITH PASSWORD '$POSTGRES_PASSWORD';"
+    fi
+}
+
+function deploy_pg_zhparser () {
+    wget -q -O - http://www.xunsearch.com/scws/down/scws-1.2.3.tar.bz2 | tar xjf -
+    cd scws-1.2.3 ; ./configure && make && sudo env "PATH=$PATH" make install
+
+    wget -q -O - https://github.com/amutu/zhparser/archive/refs/tags/V2.2.tar.gz |tar xzf -
+    cd zhparser-2.2 ; make && sudo env "PATH=$PATH" make install
+}
+
+function deploy_nodejs () {
+    if [[ $(cat /etc/*-release) =~ Ubuntu|Debian ]]; then
+        curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+        sudo apt-get install -y nodejs
+    elif [[ $(cat /etc/*-release) =~ CentOS ]]; then
+        if ! package_exists nodejs; then
+            curl -fsSL https://rpm.nodesource.com/setup_16.x | sudo bash -
+            sudo dnf install -y nodejs
+        fi
+    fi
+}
+
+function deploy_chrome () {
+    if [[ $(cat /etc/*-release) =~ Ubuntu|Debian ]]; then
+        wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+        sudo dpkg -i google-chrome-stable_current_amd64.deb
+    elif [[ $(cat /etc/*-release) =~ CentOS ]]; then
+        wget https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm
+        sudo dnf localinstall google-chrome-stable_current_x86_64.rpm
+    fi
+}
+
+function deploy_certbot () {
+    if [[ $(cat /etc/*-release) =~ Ubuntu|Debian ]]; then
+        sudo apt install snapd
+        sudo snap install core; sudo snap refresh core
+        if ! snap list |grep certbot; then
+            sudo snap install --classic certbot
+            sudo ln -s /snap/bin/certbot /usr/bin/certbot
+        fi
+    elif [[ $(cat /etc/*-release) =~ CentOS ]]; then
+        if ! package_exists python3-certbot-nginx; then
+            dnf install -y certbot python3-certbot-nginx
+        fi
+    fi
+
+    echo
+    echo "run \`sudo certbot --nginx' to configure current domain name."
+    echo "Test if can renew certbot successful. run \`sudo certbot renew --dry-run'"
+    echo 'Add following crontab, will date cert first day of month.'
+    echo '0 0 1 * * /usr/bin/certbot renew'
+    echo 'more detail, check https://certbot.eff.org/'
+}
+
 function deploy_tls () {
+    set +u
+    targetip=$targetip
+    if [ -z "$1" ]; then
+        echo 'deploy_tls: domain name must exists!'
+        exit
+    fi
     set -u
+
     local domain_name=$1
-    local reload_command=$2
+    local reload_command=${2-true}
+
     local stop_nginx=false
 
     domain_name_ip=$(ping "${domain_name}" -c 1 | sed '1{s/[^(]*(//;s/).*//;q}')
