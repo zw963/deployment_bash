@@ -950,7 +950,7 @@ function deploy_nodejs () {
 function deploy_chrome () {
     if [[ $(cat /etc/*-release) =~ Ubuntu|Debian ]]; then
         wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-        sudo dpkg -i google-chrome-stable_current_amd64.deb
+        sudo apt-get --fix-broken install  -y --no-install-recommends ./google-chrome-stable_current_amd64.deb
     elif [[ $(cat /etc/*-release) =~ CentOS ]]; then
         wget https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm
         sudo dnf localinstall google-chrome-stable_current_x86_64.rpm
