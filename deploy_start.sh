@@ -78,6 +78,14 @@ set -ue
 
 export -f deploy_start
 
+function package_exists () {
+    if [[ $(cat /etc/*-release) =~ Ubuntu|Debian ]]; then
+        dpkg -l "$*"
+    elif [[ $(cat /etc/*-release) =~ CentOS ]]; then
+        rpm -q --quiet "$*"
+    fi
+}
+
 function package_install_command () {
     if grep -qs 'Ubuntu\|Mint\|Debian' /etc/issue; then
         apt-get install -y --no-install-recommends "$@"
@@ -678,6 +686,13 @@ ${map% *})
 
     if grep -qs 'Ubuntu\|Mint\|Debian' /etc/issue; then
         # apt-file search filename
+        if ! which -a sudo &>/dev/null; then
+            basic_tools="$basic_tools sudo"
+            append_file /etc/sudoers 'Defaults env_reset
+Defaults secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+'
+        fi
+
         basic_tools="$basic_tools apt-file"
         for i in "$@"; do
             eval "
@@ -794,6 +809,82 @@ function install_jq () {
 function is_listen () {
     local port=$*
     netstat -tunl |fgrep 'LISTEN' |awk '{print $4}' |grep ":${port}$"
+}
+
+function deploy_nginx () {
+    if [[ $(cat /etc/*-release) =~ Ubuntu|Debian ]]; then
+        # 使用下面的命令查看 Ubuntu 发布版的编号
+        # code_name=$(cat /etc/*-release |grep _CODENAME |cut -d'=' -f2)
+        code_name=$(lsb_release -cs)
+
+        sudo wget https://nginx.org/keys/nginx_signing.key
+        sudo apt-key add nginx_signing.key
+
+        if ! package_exists nginx; then
+            cat <<HEREDOC > /etc/apt/sources.list.d/nginx.list
+deb https://nginx.org/packages/ubuntu/ ${code_name} nginx
+deb-src https://nginx.org/packages/ubuntu/ ${code_name} nginx
+HEREDOC
+
+            sudo apt update
+            sudo apt install nginx
+            systemctl enable nginx
+        fi
+
+        if false && ! package_exists python-certbot-nginx; then
+
+            # sudo snap install core; sudo snap refresh core
+            # sudo snap install --classic certbot
+            # sudo ln -s /snap/bin/certbot /usr/bin/certbot
+
+            add-apt-repository ppa:certbot/certbot
+            apt update
+            apt install python3-certbot-nginx
+            # 1. Run `sudo certbot --nginx' to configure current domain.
+            # 2. Test if can renew certbot successful. `sudo certbot renew --dry-run'
+            # 3. Add following crontab, will date cert first day of month.
+            #    0 0 1 * * /usr/bin/certbot renew
+            # more detail, check https://certbot.eff.org/
+
+            sudo certbot certonly --nginx
+        fi
+    elif [[ $(cat /etc/*-release) =~ CentOS ]]; then
+        if ! package_exists python3-certbot-nginx; then
+            yum install -y certbot python3-certbot-nginx
+            # 1. Run `sudo certbot --nginx' to configure current domain.
+            # 2. Test if can renew certbot successful. `sudo certbot renew --dry-run'
+            # 3. Add following crontab, will date cert first day of month.
+            #    0 0 1 * * /usr/bin/certbot renew
+            # more detail, check https://certbot.eff.org/        fi
+        fi
+
+        if ! package_exists nginx; then
+            # wget https://nginx.org/packages/centos/8/x86_64/RPMS/nginx-1.20.1-1.el8.ngx.x86_64.rpm
+            # sudo rpm -ivh nginx-1.20.1-1.el8.ngx.x86_64.rpm
+            # systemctl enable nginx
+
+            cat <<'HEREDOC' > /etc/yum.repos.d/nginx.repo
+    [nginx-stable]
+    name=nginx stable repo
+    baseurl=http://nginx.org/packages/centos/$releasever/$basearch/
+    gpgcheck=1
+    enabled=1
+    gpgkey=https://nginx.org/keys/nginx_signing.key
+    module_hotfixes=true
+
+    [nginx-mainline]
+    name=nginx mainline repo
+    baseurl=http://nginx.org/packages/mainline/centos/$releasever/$basearch/
+    gpgcheck=1
+    enabled=0
+    gpgkey=https://nginx.org/keys/nginx_signing.key
+    module_hotfixes=true
+HEREDOC
+
+            sudo yum-config-manager --enable nginx-stable
+            sudo yum install -y nginx
+        fi
+    fi
 }
 
 function deploy_tls () {
