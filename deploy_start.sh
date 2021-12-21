@@ -690,6 +690,7 @@ ${map% *})
             basic_tools="$basic_tools sudo"
             append_file /etc/sudoers 'Defaults env_reset
 Defaults secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+root    ALL=(ALL)       ALL
 '
         fi
 
