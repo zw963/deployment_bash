@@ -812,6 +812,8 @@ function is_listen () {
 }
 
 function deploy_nginx () {
+    set -ue
+
     if [[ $(cat /etc/*-release) =~ Ubuntu|Debian ]]; then
         # 使用下面的命令查看 Ubuntu 发布版的编号
         # code_name=$(cat /etc/*-release |grep _CODENAME |cut -d'=' -f2)
@@ -821,14 +823,21 @@ function deploy_nginx () {
         sudo apt-key add nginx_signing.key
 
         if ! package_exists nginx; then
-            cat <<HEREDOC > /etc/apt/sources.list.d/nginx.list
+            if [[ $(lsb_release -d) =~ Ubuntu ]]; then
+                cat <<HEREDOC | sudo tee /etc/apt/sources.list.d/nginx.list
 deb https://nginx.org/packages/ubuntu/ ${code_name} nginx
 deb-src https://nginx.org/packages/ubuntu/ ${code_name} nginx
 HEREDOC
+            else
+                cat <<HEREDOC | sudo tee /etc/apt/sources.list.d/nginx.list
+deb https://nginx.org/packages/debian/ ${code_name} nginx
+deb-src https://nginx.org/packages/debian/ ${code_name} nginx
+HEREDOC
+            fi
 
-            sudo apt update
-            sudo apt install nginx
-            systemctl enable nginx
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends nginx
+            sudo systemctl enable nginx
         fi
 
         if false && ! package_exists python-certbot-nginx; then
@@ -885,6 +894,26 @@ HEREDOC
             sudo yum install -y nginx
         fi
     fi
+}
+
+function deploy_nginx_bri_support () {
+    package libpcre3-dev zlib1g-dev libssl-dev
+
+    nginx_version=$(sudo nginx -v 2>&1 |cut -d'/' -f2)
+    wget https://nginx.org/download/nginx-${nginx_version}.tar.gz
+
+    tar xvf nginx-${nginx_version}.tar.gz
+    cd nginx-${nginx_version}
+    git clone https://github.com/google/ngx_brotli.git
+    cd ngx_brotli && git submodule update --init && cd -
+    ./configure --with-compat --add-dynamic-module=./ngx_brotli
+    make modules
+    sudo cp objs/*.so /etc/nginx/modules/
+
+    # Then, add following config into /etc/nginx/nginx.conf to load module.
+
+    # load_module modules/ngx_http_brotli_filter_module.so;
+    # load_module modules/ngx_http_brotli_static_module.so;
 }
 
 function deploy_tls () {
