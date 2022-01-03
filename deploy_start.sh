@@ -278,8 +278,21 @@ HEREDOC
 function rc_local () {
     local conf=/etc/rc.local
 
-    fgrep -qs "$*" $conf || echo "$*" >> $conf
-    chmod +x $conf && $*
+    if [ -e "$conf" ]; then
+        if ! fgrep -qs "$*" $conf; then
+            echo "$*" >> $conf
+            chmod +x $conf && $*
+            systemctl enable rc-local.service
+        fi
+    else
+        cat <<'HEREDOC' > $conf
+#!/bin/sh
+
+$*
+HEREDOC
+        $*
+        systemctl enable rc-local.service
+    fi
 }
 
 function clone () {
@@ -884,10 +897,10 @@ function deploy_nginx_bri_support () {
     make modules
     sudo cp objs/*.so /etc/nginx/modules/
 
-    # Then, add following config into /etc/nginx/nginx.conf to load module.
-
-    # load_module modules/ngx_http_brotli_filter_module.so;
-    # load_module modules/ngx_http_brotli_static_module.so;
+    echo
+    echo 'add following config into /etc/nginx/nginx.conf to load module.'
+    echo 'load_module modules/ngx_http_brotli_filter_module.so;'
+    echo 'load_module modules/ngx_http_brotli_static_module.so;'
 }
 
 function deploy_pg () {
@@ -973,6 +986,7 @@ function deploy_certbot () {
 
     echo
     echo "run \`sudo certbot --nginx' to configure current domain name."
+    echo "Or \`sudo certbot "
     echo "Test if can renew certbot successful. run \`sudo certbot renew --dry-run'"
     echo 'Add following crontab, will date cert first day of month.'
     echo '0 0 1 * * /usr/bin/certbot renew'
