@@ -1054,7 +1054,6 @@ function add_service {
     fgrep -qs -e "$2" /jffs/scripts/$1 || echo "$2" >> /jffs/scripts/$1
 }
 
-
 # # only support define a bash variable, bash array variable not supported.
 # function export () {
 #     if [ $# == 0 ]; then
@@ -1075,11 +1074,13 @@ function add_service {
 #     export_hooks="$export_hooks builtin export $name=\"$escaped_value\""
 # }
 
-function export () {
-    eval 'builtin export $@'
+function _export () {
+    eval 'builtin export $*'
     export_hooks="$export_hooks
- builtin export $@"
+ builtin export $*"
 }
+
+alias export=_export
 
 function export_function () {
     eval 'builtin export -f $*'
