@@ -55,24 +55,28 @@ set -ue
     fi
     export -f postinstall
 
-    if ! $is_ssh_login; then
-        set -u
-        # 检测是否存在 bash perl
-        ssh $target 'bash --version' &>/dev/null
+    if [ "$target" == localhost ]; then
+        bash <<< "$deploy_script"
+    else
+        if ! $is_ssh_login; then
+            set -u
+            # 检测是否存在 bash perl
+            ssh $target 'bash --version' &>/dev/null
 
-        if [ $? != 0 ]; then
-            # echo "[0m[33mremote host missing bash & perl, try to install it...[0m"
-            ssh $target 'opkg install bash perl'
+            if [ $? != 0 ]; then
+                # echo "[0m[33mremote host missing bash & perl, try to install it...[0m"
+                ssh $target 'opkg install bash perl'
+            fi
+
+            ssh $target bash <<< "$deploy_script"
+
+            if [ $? == 0 ]; then
+                set +u
+                postinstall
+            fi
+
+            exit 0
         fi
-
-        ssh $target bash <<< "$deploy_script"
-
-        if [ $? == 0 ]; then
-            set +u
-            postinstall
-        fi
-
-        exit 0
     fi
 }
 
@@ -941,10 +945,11 @@ function deploy_pg () {
 }
 
 function deploy_pg_zhparser () {
-    wget -q -O - http://www.xunsearch.com/scws/down/scws-1.2.3.tar.bz2 | tar xjf -
-    cd scws-1.2.3 ; ./configure && make && sudo env "PATH=$PATH" make install
+    # wget -q -O - http://www.xunsearch.com/scws/down/scws-1.2.3.tar.bz2 | tar xjf -
+    # cd scws-1.2.3 ; ./configure && make && sudo env "PATH=$PATH" make install
 
     wget -q -O - https://github.com/amutu/zhparser/archive/refs/tags/V2.2.tar.gz |tar xzf -
+    package clang llvm
     cd zhparser-2.2 ; make && sudo env "PATH=$PATH" make install
 }
 
