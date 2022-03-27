@@ -1015,7 +1015,7 @@ function deploy_tls () {
     domain_name_ip=$(ping "${domain_name}" -c 1 | sed '1{s/[^(]*(//;s/).*//;q}')
 
     if [[ "$domain_name_ip" != "$targetip" ]]; then
-        echo "Your $domain_name ip is not same as $targetip, exit ..."
+        echo "Your domain name $domain_name ip is $domain_name_ip, it not same as target ip $targetip, exit ..."
         exit 1
     fi
 
