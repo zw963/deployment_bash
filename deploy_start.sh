@@ -945,8 +945,8 @@ function deploy_pg () {
 }
 
 function deploy_pg_zhparser () {
-    # wget -q -O - http://www.xunsearch.com/scws/down/scws-1.2.3.tar.bz2 | tar xjf -
-    # cd scws-1.2.3 ; ./configure && make && sudo env "PATH=$PATH" make install
+    wget -q -O - http://www.xunsearch.com/scws/down/scws-1.2.3.tar.bz2 | tar xjf -
+    cd scws-1.2.3 ; ./configure && make && sudo env "PATH=$PATH" make install
 
     wget -q -O - https://github.com/amutu/zhparser/archive/refs/tags/V2.2.tar.gz |tar xzf -
     package clang llvm
