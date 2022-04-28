@@ -95,7 +95,7 @@ function package_install_command () {
         sudo apt-get install -y --no-install-recommends "$@"
     elif grep -qs CentOS /etc/redhat-release; then
         # if Want get centos version, use 'rpm -q centos-release'.
-        sudo yum install -y "$@"
+        sudo dnf install -y "$@"
     elif grep -qs openSUSE /etc/issue; then
         sudo zypper -n --gpg-auto-import-keys in --no-recommends "$@"
     fi
@@ -255,7 +255,7 @@ function daemon1 () {
     if ! which killall &>/dev/null; then
         if grep -qs CentOS /etc/redhat-release; then
             # Centos 需要 psmisc 来安装 killall
-            yum install -y psmisc
+            dnf install -y psmisc
         fi
     fi
 
@@ -657,7 +657,7 @@ function dockerinit () {
 function package () {
     local install installed
     # for Ubuntu build-essential
-    # for centos yum groupinstall "Development Tools"
+    # for centos dnf groupinstall "Development Tools"
     local compile_tools='gcc autoconf automake make libtool bzip2 unzip patch wget curl perl'
     local basic_tools='mlocate git coreutils binutils rsync'
 
@@ -888,7 +888,7 @@ HEREDOC
 }
 
 function deploy_nginx_bri_support () {
-    package libpcre3-dev zlib1g-dev libssl-dev
+    package pcre-devel zlib-devel openssl-devel
 
     nginx_version=$(sudo nginx -v 2>&1 |cut -d'/' -f2)
     wget https://nginx.org/download/nginx-${nginx_version}.tar.gz
