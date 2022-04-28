@@ -1102,13 +1102,13 @@ function add_service {
 #     export_hooks="$export_hooks builtin export $name=\"$escaped_value\""
 # }
 
-function _export () {
+function export_variable () {
     eval 'builtin export $*'
     export_hooks="$export_hooks
  builtin export $*"
 }
 
-alias export=_export
+alias export=export_variable
 
 function export_function () {
     eval 'builtin export -f $*'
