@@ -588,6 +588,16 @@ function download_and_extract () {
     esac
 }
 
+function github_latest_release () {
+    set -ux
+
+    project_name=$1
+
+    tag=$(command curl -L https://github.com/$project_name/releases/latest |egrep -o "$project_name/releases/tag/[^\"]*\" data-view-component" |cut -d'"' -f1 |rev|cut -d'/' -f1 |rev)
+
+    echo "$tag"
+}
+
 function diff () {
     command diff -q "$@" >/dev/null
 }
