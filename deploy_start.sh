@@ -589,7 +589,7 @@ function download_and_extract () {
 }
 
 function github_latest_release () {
-    set -ux
+    set -ue
 
     project_name=$1
 
