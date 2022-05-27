@@ -545,7 +545,7 @@ function download_and_extract () {
     local dest="${2-$name}"
     local strip_level="${3-1}"
 
-    rm -rf $dest && mkdir -p $dest
+    # rm -rf $dest && mkdir -p $dest
 
     case $ext in
         gz|tgz)
