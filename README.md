@@ -1,3 +1,5 @@
+# Because GFW from china, this project only updated on https://gitlab.com/zw963/deployment_bash
+
 ## Use deployment_bash deploy a app to remote VPS.
 
 
